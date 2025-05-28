@@ -149,6 +149,12 @@ async function handleAuthSubmit() {
             
             const welcomeMsg = document.getElementById('initialWelcomeMessage');
             if(welcomeMsg) welcomeMsg.remove();
+            
+            // Auto load welcome message and menu for user
+            if (appUser.role === 'user') {
+                await loadWelcomeMessageForUser();
+            }
+            
             closeModal(modalElements.authModal);
         } else {
             addMessage(responseData.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", "error");
@@ -159,6 +165,88 @@ async function handleAuthSubmit() {
         modalElements.authButtonText.classList.remove('hidden');
         modalElements.authLoadingSpinner.classList.add('hidden');
         modalElements.confirmAuthButton.disabled = false;
+    }
+}
+
+async function loadWelcomeMessageForUser() {
+    // Welcome message
+    addMessage(`🍽️ Chào mừng ${appUser.fullName || appUser.username} đến với hệ thống đặt món!\n\nĐang tải menu hôm nay cho bạn...`, 'response', true);
+    
+    try {
+        const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (appUser.isAuthenticated && appUser.token) {
+            headers['Authorization'] = `Bearer ${appUser.token}`;
+        }
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ text: "/menu" }) 
+        });
+        const responseData = await response.json();
+        
+        if (response.ok) {
+            // Check if response has the expected structure and has menu data
+            if (responseData && responseData.errorCode === 0 && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
+                let menuDisplay = "<strong>📜 MENU HÔM NAY 📜</strong><br><br>";
+                responseData.data.forEach((item, index) => {
+                    const itemName = item.name || `Món ${index + 1}`;
+                    const itemPrice = item.price || "";
+                    const itemId = item.id || (index + 1);
+                    menuDisplay += `<div class="menu-item mb-2">`;
+                    menuDisplay += `<strong>${index + 1}. ${itemName}</strong> ${itemPrice ? `- ${itemPrice}đ` : ''}`;
+                    menuDisplay += ` <button class="menu-item-button" data-id="${itemId}">Chọn món này</button>`;
+                    menuDisplay += `</div>`;
+                });
+                menuDisplay += `<br><em>💡 Tip: Click "Chọn món này" để thêm món vào đơn hàng!</em>`;
+                addMessage(menuDisplay, 'menu_item', true);
+                
+                // Add event listeners to menu buttons after message is added
+                setTimeout(() => {
+                    const menuButtons = document.querySelectorAll('.menu-item-button');
+                    menuButtons.forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const itemId = e.target.getAttribute('data-id');
+                            await sendAddCommand(itemId);
+                        });
+                    });
+                }, 100);
+            } else {
+                // No menu available
+                addMessage(`😔 <strong>Xin lỗi!</strong><br><br>Hôm nay chưa có menu nào được cập nhật.<br>Vui lòng liên hệ bếp để biết thêm thông tin về các món ăn có sẵn.`, 'response', true);
+            }
+        } else {
+            addMessage(`😔 <strong>Xin lỗi!</strong><br><br>Không thể tải menu hôm nay.<br>Vui lòng thử lại sau hoặc liên hệ hỗ trợ.`, 'error', true);
+        }
+    } catch (error) {
+        addMessage(`😔 <strong>Xin lỗi!</strong><br><br>Có lỗi xảy ra khi tải menu: ${error.message}`, 'error', true);
+    }
+}
+
+async function sendAddCommand(itemId) {
+    const { addMessage } = await import('./ui-utils.js');
+    addMessage(`/add_${itemId}`, 'command');
+    
+    try {
+        const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (appUser.isAuthenticated && appUser.token) {
+            headers['Authorization'] = `Bearer ${appUser.token}`;
+        }
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ text: `/add_${itemId}` })
+        });
+        const responseData = await response.json();
+        
+        if (response.ok) {
+            addMessage(`✅ Đã thêm món vào đơn hàng!\n\nPhản hồi: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+        } else {
+            addMessage(`❌ Lỗi khi thêm món: ${responseData.message || response.statusText}`, "error");
+        }
+    } catch (error) {
+        addMessage(`❌ Lỗi khi thêm món: ${error.message}`, "error");
     }
 }
 

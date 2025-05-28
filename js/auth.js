@@ -10,6 +10,12 @@ export let appUser = {
     token: null 
 };
 
+// Initialize auth system
+export function initializeAuth() {
+    loadAuthFromLocalStorage();
+    updateAuthStatusUI();
+}
+
 // --- LocalStorage Auth Functions ---
 export function saveAuthToLocalStorage(userData) {
     try {

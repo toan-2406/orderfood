@@ -15,11 +15,11 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
-<body class="bg-[#131712] max-w-md mx-auto sm:max-w-full">
-    <div
-        class="relative flex size-full flex-col dark justify-between group/design-root overflow-x-hidden design-root-container">
+<body class="bg-[#131712] max-w-md mx-auto sm:max-w-full h-screen overflow-hidden">
+    <div class="relative flex size-full flex-col dark justify-between group/design-root design-root-container h-screen">
         <div class="flex flex-col h-full">
-            <header class="sticky top-0 z-10 bg-[#131712]/80 backdrop-blur-md">
+            <!-- Fixed Header -->
+            <header class="bg-[#131712]/95 backdrop-blur-md border-b border-white/10 shrink-0 z-10">
                 <div class="flex items-center p-4 pb-3">
                     <button id="punchButton" class="text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
                        <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNoanlucTVhZXN2ajJyamp3amV2ZjZjNzM5cDZwZnVoNGJsNDg3bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/pQf5O9WAjSwwpDt9go/giphy.gif" class="h-[50px] w-[50px]" alt='punch me'> Đấm tao đi !
@@ -32,32 +32,71 @@
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-                <div class="min-h-[calc(100vh-280px)] sm:min-h-[calc(100vh-250px)] md:min-h-[calc(100vh-220px)] flex flex-col justify-end"
-                    id="messageContainer">
-                    <div id="initialWelcomeMessage" class="bg-[#1A1F18] p-4 rounded-lg shadow-md">
-                        <p class="text-[#A5B6A0] text-sm">
-                            Chào mừng đến với Admin Console.
-                        </p>
-                        <p class="text-[#A5B6A0] text-sm mt-1">
-                            Vui lòng sử dụng lệnh
-                            <code class="text-[#53d22c] bg-[#2D372A] px-1 py-0.5 rounded-sm">/auth</code> để đăng nhập.
-                        </p>
-                        <p class="text-[#A5B6A0] text-xs mt-2">
-                            Gõ <code class="text-[#798874]">/help</code> để xem các lệnh có thể sử dụng.
-                        </p>
+            <!-- Scrollable Main Chat Area -->
+            <main class="flex-1 overflow-y-auto px-4 py-4" id="mainChatArea">
+                <div class="min-h-full flex flex-col justify-end" id="messageContainer">
+                    <div id="initialWelcomeMessage" class="welcome-card">
+                        <div class="welcome-title">🍽️ KIU MÓN LẸ ĐÊ!</div>
+                        <div class="welcome-subtitle">
+                            Chào mừng bạn đến với hệ thống đặt món thông minh!<br>
+                            Trải nghiệm đặt món nhanh chóng và tiện lợi.
+                        </div>
+                        
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <div class="feature-icon">🚀</div>
+                                <div class="feature-title">Đặt món nhanh</div>
+                                <div class="feature-description">Giao diện đơn giản, dễ sử dụng với các lệnh thông minh</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">📱</div>
+                                <div class="feature-title">Tối ưu mobile</div>
+                                <div class="feature-description">Thiết kế responsive, hoạt động mượt mà trên mọi thiết bị</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">⚡</div>
+                                <div class="feature-title">Realtime</div>
+                                <div class="feature-description">Cập nhật trạng thái đơn hàng và menu theo thời gian thực</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">🔐</div>
+                                <div class="feature-title">Bảo mật</div>
+                                <div class="feature-description">Hệ thống xác thực an toàn, bảo vệ thông tin cá nhân</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 2rem; padding: 1rem; background: rgba(83, 210, 44, 0.1); border-radius: 12px; border: 1px solid rgba(83, 210, 44, 0.3);">
+                            <p style="color: #53d22c; font-weight: 600; margin-bottom: 0.5rem;">🎯 Bắt đầu ngay:</p>
+                            <p style="color: #A5B6A0; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                Để truy cập đầy đủ tính năng, vui lòng đăng nhập bằng lệnh:
+                            </p>
+                            <p style="color: #53d22c; font-weight: 600; font-family: monospace; background: #2D372A; padding: 0.5rem; border-radius: 6px; margin: 0.5rem 0;">
+                                /auth
+                            </p>
+                            <p style="color: #A5B6A0; font-size: 0.9rem;">
+                                Hoặc gõ <strong style="color: #53d22c;">/help</strong> để xem tất cả các lệnh có sẵn
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #798874; text-align: center;">
+                            �� Tip: Nhập "/" để xem gợi ý lệnh tự động
+                        </div>
                     </div>
                 </div>
             </main>
 
-            <footer class="fixed bottom-0 bg-[#131712]/80 backdrop-blur-md p-4 border-t border-white/10 w-full"
-                style="left: 50%; transform: translateX(-50%);">
+            <!-- Fixed Footer -->
+            <footer class="bg-[#131712]/95 backdrop-blur-md p-4 border-t border-white/10 shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="relative flex-1">
                         <span id="terminalIcon" class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#A5B6A0] z-10">terminal</span>
-                        <input id="commandInput" class="form-input w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-none border-2 border-[#2D372A] bg-[#1A1F18] focus:border-[#53d22c] focus:ring-0 h-14 placeholder:text-[#A5B6A0] p-4 pl-10 text-base font-normal leading-normal transition-colors command-input-shadow" placeholder="Nhập lệnh..." type="text" value=""/>
+                        <input id="commandInput" class="form-input w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-none border-2 border-[#2D372A] bg-[#1A1F18] focus:border-[#53d22c] focus:ring-0 h-14 placeholder:text-[#A5B6A0] p-4 pl-10 text-base font-normal leading-normal transition-colors command-input-shadow" placeholder="Nhập lệnh..." type="text" value="" autocomplete="off"/>
                         <div id="commandListPopup"
                             class="hidden absolute bottom-full left-0 mb-2 w-full rounded-lg bg-[#1A1F18] border border-[#2D372A] shadow-xl p-2 space-y-1 z-20 max-h-48 overflow-y-auto">
+                        </div>
+                        <!-- Command suggestions dropdown -->
+                        <div id="commandSuggestions"
+                            class="hidden absolute bottom-full left-0 mb-2 w-full rounded-lg bg-[#1A1F18] border border-[#2D372A] shadow-xl p-2 space-y-1 z-20 max-h-32 overflow-y-auto">
                         </div>
                     </div>
                     <button id="sendCommandButton" class="bg-[#53d22c] text-black rounded-xl p-3.5 flex items-center justify-center hover:bg-opacity-80 transition-colors">

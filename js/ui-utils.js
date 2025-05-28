@@ -1,49 +1,73 @@
 import { appUser } from './auth.js';
 
-// UI Utility functions
-export function addMessage(text, type = 'command', isHtml = false) {
-    const messageContainer = document.getElementById('messageContainer');
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'break-words');
-    
-    if (type === 'command') {
-        messageElement.classList.add('ml-auto', 'bg-[#2D372A]', 'max-w-[70%]');
-        const codeElement = document.createElement('code');
-        codeElement.classList.add('text-[#A5B6A0]', 'text-sm', 'whitespace-pre-wrap');
-        codeElement.textContent = text;
-        messageElement.appendChild(codeElement);
-    } else if (type === 'response' || type === 'menu_item' || type === 'webhook_response') {
-        messageElement.classList.add('mr-auto', 'bg-[#1A1F18]', 'max-w-[70%]');
-         if (type === 'webhook_response') { 
-            messageElement.classList.add('border', 'border-blue-500/30');
-        }
-        const pElement = document.createElement('p');
-        pElement.classList.add('text-[#A5B6A0]', 'text-sm', 'whitespace-pre-wrap');
-        if (isHtml) {
-            pElement.innerHTML = text;
-        } else {
-            pElement.textContent = text;
-        }
-        messageElement.appendChild(pElement);
-    } else if (type === 'error') {
-        messageElement.classList.add('mr-auto', 'bg-red-700/30', 'max-w-[70%]');
-        const pElement = document.createElement('p');
-        pElement.classList.add('text-red-300', 'text-sm', 'whitespace-pre-wrap');
-        pElement.textContent = text;
-        messageElement.appendChild(pElement);
-    }
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
+// Helper function to format message text
+function formatMessageText(text) {
+    // Convert newlines to <br> tags
+    return text.replace(/\n/g, '<br>');
+}
+
+// UI Utility functions
+export function addMessage(text, type = 'system', allowHTML = false) {
+    const messageContainer = document.getElementById('messageContainer');
+    const mainChatArea = document.getElementById('mainChatArea');
+    
+    // Remove welcome message if user is authenticated
     const welcomeMessage = messageContainer.querySelector('#initialWelcomeMessage');
-    if (welcomeMessage && appUser.isAuthenticated) { 
+    if (welcomeMessage && (appUser.isAuthenticated || messageContainer.children.length > 1)) { 
          welcomeMessage.remove();
-    } else if (welcomeMessage && !appUser.isAuthenticated && messageContainer.children.length > 1 && type !== 'command') {
-         if (messageContainer.querySelectorAll('div:not(#initialWelcomeMessage)').length > 0) {
-            welcomeMessage.remove();
-         }
     }
     
-    messageContainer.appendChild(messageElement);
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('mb-2');
+    
+    let bgColor, textColor, alignment;
+    
+    switch (type) {
+        case 'command':
+            bgColor = 'bg-[#53d22c]';
+            textColor = 'text-black';
+            alignment = 'ml-auto max-w-[70%]';
+            break;
+        case 'response':
+        case 'webhook_response':
+        case 'menu_item':
+            bgColor = 'bg-[#1A1F18]';
+            textColor = 'text-[#A5B6A0]';
+            alignment = 'mr-auto max-w-[70%]';
+            break;
+        case 'error':
+            bgColor = 'bg-red-900/30';
+            textColor = 'text-red-300';
+            alignment = 'mr-auto max-w-[70%]';
+            break;
+        default:
+            bgColor = 'bg-[#1A1F18]';
+            textColor = 'text-[#A5B6A0]';
+            alignment = 'mr-auto max-w-[70%]';
+    }
+    
+    messageDiv.className = `${bgColor} ${textColor} p-3 rounded-lg shadow-md mb-2 ${alignment}`;
+    
+    const contentHTML = allowHTML ? text : escapeHtml(text);
+    const formattedHTML = formatMessageText(contentHTML);
+    messageDiv.innerHTML = `<p class="text-sm">${formattedHTML}</p>`;
+    
+    messageContainer.appendChild(messageDiv);
+    
+    // Auto scroll to latest message in main chat area
+    setTimeout(() => {
+        mainChatArea.scrollTo({
+            top: mainChatArea.scrollHeight,
+            behavior: 'smooth'
+        });
+    }, 100);
 }
 
 // Generic Modal Opener/Closer
@@ -83,21 +107,7 @@ export function setupModalSubmitOnEnter(modalInputFields, confirmButton) {
 }
 
 export function alignFooterToBody() {
-    const bodyStyles = window.getComputedStyle(document.body);
-    const footerElement = document.querySelector('footer.fixed');
-    
-    if (bodyStyles.maxWidth !== 'none' && bodyStyles.maxWidth !== '100%') {
-        footerElement.style.maxWidth = bodyStyles.maxWidth;
-        if (bodyStyles.marginLeft === 'auto' && bodyStyles.marginRight === 'auto') {
-            footerElement.style.left = '50%';
-            footerElement.style.transform = 'translateX(-50%)';
-        } else {
-            footerElement.style.left = bodyStyles.marginLeft;
-            footerElement.style.transform = 'none';
-        }
-    } else { 
-        footerElement.style.maxWidth = '100%';
-        footerElement.style.left = '0';
-        footerElement.style.transform = 'none';
-    }
+    // Footer is no longer fixed positioned, so no alignment needed
+    // This function is kept for backward compatibility but does nothing now
+    return;
 } 
