@@ -61,9 +61,14 @@ function updateCommandButtons() {
     if (!commandButtonsContainer) return;
     
     commandButtonsContainer.innerHTML = '';
-    const relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => 
+    let relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => 
         appUser.isAuthenticated ? cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : cmdObj.allowedRoles.includes('guest')
     );
+
+    // Ẩn /auth và /add nếu là user
+    if (appUser.isAuthenticated && appUser.role === 'user') {
+        relevantCommands = relevantCommands.filter(cmdObj => cmdObj.name !== '/auth' && cmdObj.name !== '/add');
+    }
 
     relevantCommands.forEach(cmdObj => {
         const button = document.createElement('button');
@@ -112,9 +117,14 @@ export function updateCommandHelpText() {
 
 export function populateCommandList() {
     commandListPopup.innerHTML = '';
-    const relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => 
+    let relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => 
          appUser.isAuthenticated ? cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : cmdObj.allowedRoles.includes('guest')
     );
+
+    // Ẩn /auth và /add nếu là user
+    if (appUser.isAuthenticated && appUser.role === 'user') {
+        relevantCommands = relevantCommands.filter(cmdObj => cmdObj.name !== '/auth' && cmdObj.name !== '/add');
+    }
 
     relevantCommands.forEach(cmdObj => {
         const commandItem = document.createElement('div');
@@ -424,23 +434,27 @@ function handleKeyDown(e) {
 
 function showCommandSuggestions(inputValue) {
     const searchTerm = inputValue.slice(1).toLowerCase(); // Remove '/' and convert to lowercase
-    
-    const relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => {
+
+    let relevantCommands = AVAILABLE_COMMANDS.filter(cmdObj => {
         const hasPermission = appUser.isAuthenticated ? 
             cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : 
             cmdObj.allowedRoles.includes('guest');
-        
         return hasPermission && cmdObj.name.toLowerCase().includes(searchTerm);
     });
-    
+
+    // Ẩn /auth và /add nếu là user
+    if (appUser.isAuthenticated && appUser.role === 'user') {
+        relevantCommands = relevantCommands.filter(cmdObj => cmdObj.name !== '/auth' && cmdObj.name !== '/add');
+    }
+
     if (relevantCommands.length === 0) {
         hideSuggestions();
         return;
     }
-    
+
     commandSuggestions.innerHTML = '';
     selectedSuggestionIndex = -1;
-    
+
     relevantCommands.forEach((cmdObj, index) => {
         const suggestionItem = document.createElement('div');
         suggestionItem.className = 'command-suggestion-item';
@@ -448,13 +462,13 @@ function showCommandSuggestions(inputValue) {
             <div class="font-medium">${cmdObj.name}</div>
             <div class="text-xs opacity-75">${cmdObj.desc}</div>
         `;
-        
+
         suggestionItem.addEventListener('click', () => selectSuggestion(suggestionItem));
         suggestionItem.dataset.command = cmdObj.name;
-        
+
         commandSuggestions.appendChild(suggestionItem);
     });
-    
+
     commandSuggestions.classList.remove('hidden');
 }
 
