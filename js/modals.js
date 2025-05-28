@@ -273,13 +273,17 @@ async function handleCreateUserSubmit() {
         });
         const responseData = await response.json();
         if (response.ok) {
-            addMessage(`Phản hồi tạo người dùng: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+            if (responseData && responseData.errorCode === 0) {
+                addMessage(`👤 <strong>TẠO NGƯỜI DÙNG THÀNH CÔNG!</strong><br><br>Đã tạo tài khoản "${newUsername}" thành công.`, 'webhook_response', true);
+            } else {
+                addMessage(`❌ <strong>LỖI TẠO NGƯỜI DÙNG!</strong><br><br>${responseData.message || 'Không thể tạo tài khoản.'}`, "error", true);
+            }
             closeModal(modalElements.createUserModal);
         } else {
-            addMessage(`Lỗi tạo người dùng: ${responseData.message || response.statusText}`, "error");
+            addMessage(`❌ Lỗi tạo người dùng: ${responseData.message || response.statusText}`, "error");
         }
     } catch (error) {
-        addMessage(`Lỗi khi tạo người dùng: ${error.message}`, "error");
+        addMessage(`❌ Lỗi khi tạo người dùng: ${error.message}`, "error");
     } finally {
         modalElements.createUserButtonText.classList.remove('hidden');
         modalElements.createUserLoadingSpinner.classList.add('hidden');
@@ -313,13 +317,17 @@ async function handleUpdatePasswordSubmit() {
         });
         const responseData = await response.json();
         if (response.ok) {
-            addMessage(`Phản hồi cập nhật mật khẩu: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+            if (responseData && responseData.errorCode === 0) {
+                addMessage(`🔐 <strong>CẬP NHẬT MẬT KHẨU THÀNH CÔNG!</strong><br><br>Mật khẩu của bạn đã được thay đổi thành công.`, 'webhook_response', true);
+            } else {
+                addMessage(`❌ <strong>LỖI CẬP NHẬT MẬT KHẨU!</strong><br><br>${responseData.message || 'Không thể cập nhật mật khẩu.'}`, "error", true);
+            }
             closeModal(modalElements.updatePasswordModal);
         } else {
-            addMessage(`Lỗi cập nhật mật khẩu: ${responseData.message || response.statusText}`, "error");
+            addMessage(`❌ Lỗi cập nhật mật khẩu: ${responseData.message || response.statusText}`, "error");
         }
     } catch (error) {
-        addMessage(`Lỗi khi cập nhật mật khẩu: ${error.message}`, "error");
+        addMessage(`❌ Lỗi khi cập nhật mật khẩu: ${error.message}`, "error");
     } finally {
         modalElements.updatePasswordButtonText.classList.remove('hidden');
         modalElements.updatePasswordLoadingSpinner.classList.add('hidden');

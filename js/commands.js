@@ -5,6 +5,7 @@ import { openAuthModal, openInsertModal, openCreateUserModal, openUpdatePassword
 
 let commandInput, commandListPopup, commandHelpText, terminalIcon, commandButtonsContainer, commandSuggestions;
 let selectedSuggestionIndex = -1;
+let stickyMenuCard = null;
 
 export function initializeCommandElements() {
     commandInput = document.getElementById('commandInput');
@@ -185,6 +186,10 @@ export async function handleCommand(command) {
             updateAuthStatusUI();
             updateCommandHelpText(); 
             populateCommandList(); 
+            
+            // Hide sticky menu card when logout
+            hideStickyMenuCard();
+            
             addMessage(`Người dùng ${oldUsername} đã đăng xuất.`, 'response');
             const welcomeMsg = document.getElementById('initialWelcomeMessage');
             const messageContainer = document.getElementById('messageContainer');
@@ -233,7 +238,10 @@ async function handleMenuCommand() {
     tempLoadingMsg.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'mr-auto', 'max-w-[70%]');
     tempLoadingMsg.innerHTML = `<p class="text-[#A5B6A0] text-sm flex items-center">Đang tải menu từ server <span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span></p>`;
     messageContainer.appendChild(tempLoadingMsg);
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    
+    // Scroll to bottom to show loading message
+    const mainChatArea = document.getElementById('mainChatArea');
+    mainChatArea.scrollTo({ top: mainChatArea.scrollHeight, behavior: 'smooth' });
 
     try {
         const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
@@ -249,74 +257,33 @@ async function handleMenuCommand() {
         const loadingElement = document.getElementById(loadingId);
         if(loadingElement) loadingElement.remove();
         const responseData = await response.json();
+        
         if (response.ok) {
-            let menuDisplay = "<strong>📜 DANH SÁCH MENU  📜</strong>\n\n";
-            
             // Check if response has the expected structure: { errorCode: 0, message: "Success", data: [...] }
             if (responseData && responseData.errorCode === 0 && responseData.data && Array.isArray(responseData.data)) {
-                responseData.data.forEach((item, index) => {
-                    const itemName = item.name || `Món ${index + 1}`;
-                    const itemPrice = item.price || "";
-                    const itemId = item.id || (index + 1);
-                    menuDisplay += `<div class="menu-item mb-2">`;
-                    menuDisplay += `<strong>${index + 1}. ${itemName}</strong> ${itemPrice ? `- ${itemPrice}đ` : ''}`;
-                    
-                    // Add selection button for authenticated users
-                    if (appUser.isAuthenticated) {
-                        menuDisplay += ` <button class="menu-item-button" data-id="${itemId}">Chọn món này</button>`;
-                    }
-                    menuDisplay += `</div>`;
-                });
+                // Create sticky menu card
+                createStickyMenuCard(responseData.data);
                 
-                if (appUser.isAuthenticated) {
-                    menuDisplay += `<br><em>💡 Tip: Click "Chọn món này" để thêm món vào đơn hàng!</em>`;
-                }
+                // Add confirmation message
+                addMessage(`✅ <strong>MENU ĐÃ TẢI THÀNH CÔNG!</strong><br><br>📌 Menu hôm nay đã được hiển thị ở đầu chat. Bạn có thể click trực tiếp vào món để đặt hàng!`, 'response', true);
             } else if (typeof responseData === 'string') {
-                menuDisplay += responseData.replace(/\n/g, "<br>"); 
+                addMessage(`📜 <strong>MENU HÔM NAY</strong><br><br>${responseData.replace(/\n/g, "<br>")}`, 'menu_item', true); 
             } else if (Array.isArray(responseData)) {
-                 responseData.forEach((item, index) => {
-                    const itemName = item.name || item.itemName || `Món ${index + 1}`;
-                    const itemPrice = item.price || item.itemPrice || "";
-                    const itemId = item.id || (index + 1);
-                    menuDisplay += `<div class="menu-item mb-2">`;
-                    menuDisplay += `<strong>${index + 1}. ${itemName}</strong> ${itemPrice ? `- ${itemPrice}đ` : ''}`;
-                    
-                    // Add selection button for authenticated users
-                    if (appUser.isAuthenticated) {
-                        menuDisplay += ` <button class="menu-item-button" data-id="${itemId}">Chọn món này</button>`;
-                    }
-                    menuDisplay += `</div>`;
-                });
-                
-                if (appUser.isAuthenticated) {
-                    menuDisplay += `<br><em>💡 Tip: Click "Chọn món này" để thêm món vào đơn hàng!</em>`;
-                }
+                // Fallback for direct array response
+                createStickyMenuCard(responseData);
+                addMessage(`✅ <strong>MENU ĐÃ TẢI THÀNH CÔNG!</strong><br><br>📌 Menu hôm nay đã được hiển thị ở đầu chat.`, 'response', true);
             } else if (typeof responseData === 'object' && responseData !== null) {
-                 menuDisplay += JSON.stringify(responseData, null, 2); 
+                 addMessage(`📜 <strong>MENU HÔM NAY</strong><br><br>${JSON.stringify(responseData, null, 2)}`, 'menu_item', true); 
             } else {
-                menuDisplay += "Không có dữ liệu menu hoặc định dạng không xác định.";
-            }
-            addMessage(menuDisplay, 'menu_item', true);
-            
-            // Add event listeners to menu buttons after message is added (only for authenticated users)
-            if (appUser.isAuthenticated) {
-                setTimeout(() => {
-                    const menuButtons = document.querySelectorAll('.menu-item-button');
-                    menuButtons.forEach(button => {
-                        button.addEventListener('click', async (e) => {
-                            const itemId = e.target.getAttribute('data-id');
-                            await sendAddCommand(itemId);
-                        });
-                    });
-                }, 100);
+                addMessage("❌ Không có dữ liệu menu hoặc định dạng không xác định.", "error");
             }
         } else {
-            addMessage(`Lỗi khi tải menu từ server: ${responseData.message || response.statusText}`, "error");
+            addMessage(`❌ Lỗi khi tải menu từ server: ${responseData.message || response.statusText}`, "error");
         }
     } catch (error) {
         const loadingElement = document.getElementById(loadingId);
         if(loadingElement) loadingElement.remove();
-        addMessage(`Lỗi khi tải menu: ${error.message}`, "error");
+        addMessage(`❌ Lỗi khi tải menu: ${error.message}`, "error");
     }
 }
 
@@ -337,7 +304,12 @@ export async function sendAddCommand(itemId) {
         const responseData = await response.json();
         
         if (response.ok) {
-            addMessage(`✅ Đã thêm món vào đơn hàng!\n\nPhản hồi: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+            if (responseData && responseData.errorCode === 0) {
+                addMessage(`🍽️ <strong>ĐÃ THÊM MÓN VÀO ĐƠN HÀNG!</strong><br><br>Món ăn đã được thêm vào danh sách đặt hàng của bạn.`, 'webhook_response', true);
+            } else {
+                const formattedResponse = formatServerResponse(`/add_${itemId}`, responseData);
+                addMessage(formattedResponse, 'webhook_response', true);
+            }
         } else {
             addMessage(`❌ Lỗi khi thêm món: ${responseData.message || response.statusText}`, "error");
         }
@@ -381,7 +353,8 @@ async function handleWebhookCommand(command) {
         if(loadingElement) loadingElement.remove();
         const responseData = await response.json();
         if (response.ok) {
-            addMessage(`Phản hồi từ server cho lệnh "${command}": ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+            const formattedResponse = formatServerResponse(command, responseData);
+            addMessage(formattedResponse, 'webhook_response', true);
         } else {
             addMessage(`Lỗi từ server cho lệnh "${command}": ${responseData.message || response.statusText}`, "error");
         }
@@ -506,4 +479,167 @@ function selectSuggestion(suggestionElement) {
 function hideSuggestions() {
     commandSuggestions.classList.add('hidden');
     selectedSuggestionIndex = -1;
-} 
+}
+
+// Format server responses based on command type
+function formatServerResponse(command, responseData) {
+    const commandName = command.trim().split(' ')[0];
+    
+    // Check if response has expected structure
+    if (!responseData || typeof responseData !== 'object' || responseData.errorCode === undefined) {
+        return JSON.stringify(responseData, null, 2);
+    }
+    
+    // Success responses
+    if (responseData.errorCode === 0) {
+        switch (commandName) {
+            case '/aggregate':
+                if (responseData.message) {
+                    return `📊 <strong>THỐNG KÊ ĐƠN HÀNG</strong><br><br>${responseData.message.replace(/\n/g, '<br>')}<br><em>💡 Tổng hợp các món đã được đặt</em>`;
+                }
+                break;
+                
+            case '/delete':
+                return `🗑️ XÓA THÀNH CÔNG!\n\nĐã xóa các món vừa đặt khỏi đơn hàng.`;
+                
+            case '/lock':
+                return `🔒 <strong>KHÓA THÀNH CÔNG!</strong><br><br>Hệ thống đã khóa, không thể đặt thêm món nữa.`;
+                
+            case '/unlock':
+                return `🔓 <strong>MỞ KHÓA THÀNH CÔNG!</strong><br><br>Hệ thống đã mở khóa, có thể đặt món trở lại.`;
+                
+            case '/create_user':
+                return `👤 <strong>TẠO NGƯỜI DÙNG THÀNH CÔNG!</strong><br><br>Đã tạo tài khoản mới thành công.`;
+                
+            case '/update_password':
+                return `🔐 <strong>CẬP NHẬT MẬT KHẨU THÀNH CÔNG!</strong><br><br>Mật khẩu đã được thay đổi thành công.`;
+                
+            case '/publish':
+                return `📢 <strong>XUẤT BẢN THÀNH CÔNG!</strong><br><br>Menu đã được xuất bản và sẵn sàng phục vụ.`;
+                
+            default:
+                if (responseData.message && responseData.message !== "Success") {
+                    return `✅ <strong>THÀNH CÔNG!</strong><br><br>${responseData.message}`;
+                } else {
+                    return `✅ <strong>THÀNH CÔNG!</strong><br><br>Lệnh "${command}" đã được thực hiện thành công.`;
+                }
+        }
+    }
+    
+    // Error responses
+    if (responseData.errorCode !== 0) {
+        return `❌ <strong>LỖI!</strong><br><br>${responseData.message || 'Có lỗi xảy ra khi thực hiện lệnh.'}`;
+    }
+    
+    // Fallback to JSON format
+    return JSON.stringify(responseData, null, 2);
+}
+
+// Create and manage sticky menu card
+function createStickyMenuCard(menuData) {
+    const messageContainer = document.getElementById('messageContainer');
+    
+    // Remove existing sticky menu if any
+    const existingStickyMenu = document.querySelector('.sticky-menu-card');
+    if (existingStickyMenu) {
+        existingStickyMenu.remove();
+    }
+    
+    // Only show for authenticated users with menu data
+    if (!appUser.isAuthenticated || !menuData || !Array.isArray(menuData) || menuData.length === 0) {
+        return;
+    }
+    
+    // Create sticky menu card
+    stickyMenuCard = document.createElement('div');
+    stickyMenuCard.className = 'sticky-menu-card';
+    stickyMenuCard.id = 'stickyMenuCard';
+    
+    // Create header with title and toggle
+    const header = document.createElement('div');
+    header.className = 'sticky-menu-header';
+    
+    const title = document.createElement('div');
+    title.className = 'sticky-menu-title';
+    title.innerHTML = '📌 MENU HÔM NAY';
+    
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'sticky-menu-toggle';
+    toggleButton.textContent = '−';
+    toggleButton.title = 'Thu gọn/Mở rộng menu';
+    
+    // Toggle functionality
+    toggleButton.addEventListener('click', () => {
+        stickyMenuCard.classList.toggle('collapsed');
+        toggleButton.textContent = stickyMenuCard.classList.contains('collapsed') ? '+' : '−';
+        
+        // Save state to localStorage
+        const isCollapsed = stickyMenuCard.classList.contains('collapsed');
+        localStorage.setItem('stickyMenuCollapsed', isCollapsed.toString());
+    });
+    
+    header.appendChild(title);
+    header.appendChild(toggleButton);
+    
+    // Create menu items container
+    const menuItemsContainer = document.createElement('div');
+    menuItemsContainer.className = 'sticky-menu-items';
+    
+    // Create menu items
+    menuData.forEach((item, index) => {
+        const menuItem = document.createElement('button');
+        menuItem.className = 'sticky-menu-item';
+        menuItem.dataset.id = item.id || (index + 1);
+        
+        const itemName = item.name || `Món ${index + 1}`;
+        const itemPrice = item.price ? new Intl.NumberFormat('vi-VN', { 
+            style: 'currency', 
+            currency: 'VND' 
+        }).format(item.price) : "";
+        
+        menuItem.innerHTML = `
+            <div class="sticky-menu-item-name">${itemName}</div>
+            ${itemPrice ? `<div class="sticky-menu-item-price">${itemPrice}</div>` : ''}
+        `;
+        
+        menuItem.title = itemName; // Full name on hover
+        
+        // Add click event
+        menuItem.addEventListener('click', async () => {
+            const itemId = menuItem.getAttribute('data-id');
+            await sendAddCommand(itemId);
+        });
+        
+        menuItemsContainer.appendChild(menuItem);
+    });
+    // Assemble the card
+    stickyMenuCard.appendChild(header);
+    stickyMenuCard.appendChild(menuItemsContainer);
+    
+    // Insert at the beginning of message container
+    messageContainer.insertBefore(stickyMenuCard, messageContainer.firstChild);
+    
+    // Load saved collapsed state
+    const savedCollapsedState = localStorage.getItem('stickyMenuCollapsed');
+    if (savedCollapsedState === 'true') {
+        stickyMenuCard.classList.add('collapsed');
+        toggleButton.textContent = '+';
+    }
+}
+
+function hideStickyMenuCard() {
+    const existingStickyMenu = document.querySelector('.sticky-menu-card');
+    if (existingStickyMenu) {
+        existingStickyMenu.classList.add('hidden');
+    }
+}
+
+function showStickyMenuCard() {
+    const existingStickyMenu = document.querySelector('.sticky-menu-card');
+    if (existingStickyMenu) {
+        existingStickyMenu.classList.remove('hidden');
+    }
+}
+
+// Export createStickyMenuCard for use in other modules
+export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard }; 

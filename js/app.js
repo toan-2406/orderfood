@@ -71,6 +71,8 @@ async function autoLoadMenuOnReload() {
         
         try {
             const { CONFIG } = await import('./constants.js');
+            const { createStickyMenuCard } = await import('./commands.js');
+            
             const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
             const headers = { 'Content-Type': 'application/json' };
             if (appUser.token) {
@@ -87,32 +89,11 @@ async function autoLoadMenuOnReload() {
             if (response.ok) {
                 // Check if response has menu data
                 if (responseData && responseData.errorCode === 0 && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
-                    let menuDisplay = "<strong>📜 MENU HÔM NAY 📜</strong><br><br>";
-                    responseData.data.forEach((item, index) => {
-                        const itemName = item.name || `Món ${index + 1}`;
-                        const itemPrice = item.price || "";
-                        const itemId = item.id || (index + 1);
-                        menuDisplay += `<div class="menu-item mb-2">`;
-                        menuDisplay += `<strong>${index + 1}. ${itemName}</strong> ${itemPrice ? `- ${itemPrice}đ` : ''}`;
-                        
-                        // Add selection button for all authenticated users
-                        menuDisplay += ` <button class="menu-item-button" data-id="${itemId}">Chọn món này</button>`;
-                        menuDisplay += `</div>`;
-                    });
-                    menuDisplay += `<br><em>💡 Tip: Click "Chọn món này" để thêm món vào đơn hàng!</em>`;
-                    addMessage(menuDisplay, 'menu_item', true);
+                    // Create sticky menu card
+                    const { createStickyMenuCard } = await import('./commands.js');
+                    createStickyMenuCard(responseData.data);
                     
-                    // Add event listeners to menu buttons after message is added
-                    setTimeout(async () => {
-                        const { sendAddCommand } = await import('./commands.js');
-                        const menuButtons = document.querySelectorAll('.menu-item-button');
-                        menuButtons.forEach(button => {
-                            button.addEventListener('click', async (e) => {
-                                const itemId = e.target.getAttribute('data-id');
-                                await sendAddCommand(itemId);
-                            });
-                        });
-                    }, 100);
+                    addMessage(`✅ <strong>CHÀO MỪNG ${appUser.fullName || appUser.username}!</strong><br><br>📌 Menu hôm nay đã sẵn sàng ở đầu chat. Click vào món để đặt hàng ngay!`, 'response', true);
                 } else {
                     // No menu available
                     addMessage(`😔 <strong>Thông báo:</strong><br><br>Hôm nay chưa có menu nào được cập nhật.<br>Vui lòng sử dụng lệnh <code>/help</code> để xem các lệnh khác.`, 'response', true);
