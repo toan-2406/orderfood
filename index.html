@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link as="style"
+        href="https://fonts.googleapis.com/css2?display=swap&family=Manrope%3Awght%40400%3B500%3B700%3B800&family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+        onload="this.rel='stylesheet'" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <title>OrderFood</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+        /* Custom shadow for the command input on focus */
+        .command-input-shadow:focus {
+            box-shadow: 0px 0px 0px 2px #53d22c;
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+            font-family: 'Manrope', 'Noto Sans', sans-serif;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .design-root-container {
+            min-height: 100vh;
+        }
+
+        footer.fixed {
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+
+            /* sm breakpoint */
+            body.sm\:max-w-full footer.fixed {
+                max-width: 100%;
+            }
+        }
+
+        body.max-w-md footer.fixed {
+            max-width: 28rem;
+            /* 448px, matches max-w-md */
+        }
+
+        #terminalIcon {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .command-item {
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 40;
+        }
+
+        .modal-content {
+            z-index: 50;
+        }
+        
+        /* Fullscreen Video Modal Styles */
+        #videoModalOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 100; /* Ensure it's on top of everything */
+            display:none;
+            align-items: center;
+            justify-content: center;
+
+        }
+        #videoModalContent {
+            width: 90%;
+            height: 90%;
+            position: relative;
+        }
+        #videoModalIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #closeVideoModalButton {
+            position: absolute;
+            top: -30px; /* Adjust as needed */
+            right: 0px; /* Adjust as needed */
+            background-color: #53d22c;
+            color: black;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 110; /* Above iframe */
+        }
+
+
+        #insertTextarea::-webkit-scrollbar,
+        #authPassword::-webkit-scrollbar,
+        #authUsername::-webkit-scrollbar,
+        #createUsername::-webkit-scrollbar,
+        #createPassword::-webkit-scrollbar,
+        #updateOldPassword::-webkit-scrollbar,
+        #updateNewPassword::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #insertTextarea::-webkit-scrollbar-track,
+        #authPassword::-webkit-scrollbar-track,
+        #authUsername::-webkit-scrollbar-track,
+        #createUsername::-webkit-scrollbar-track,
+        #createPassword::-webkit-scrollbar-track,
+        #updateOldPassword::-webkit-scrollbar-track,
+        #updateNewPassword::-webkit-scrollbar-track {
+            background: #2D372A;
+            border-radius: 4px;
+        }
+
+        #insertTextarea::-webkit-scrollbar-thumb,
+        #authPassword::-webkit-scrollbar-thumb,
+        #authUsername::-webkit-scrollbar-thumb,
+        #createUsername::-webkit-scrollbar-thumb,
+        #createPassword::-webkit-scrollbar-thumb,
+        #updateOldPassword::-webkit-scrollbar-thumb,
+        #updateNewPassword::-webkit-scrollbar-thumb {
+            background: #53d22c;
+            border-radius: 4px;
+        }
+
+        #insertTextarea::-webkit-scrollbar-thumb:hover,
+        #authPassword::-webkit-scrollbar-thumb:hover,
+        #authUsername::-webkit-scrollbar-thumb:hover,
+        #createUsername::-webkit-scrollbar-thumb:hover,
+        #createPassword::-webkit-scrollbar-thumb:hover,
+        #updateOldPassword::-webkit-scrollbar-thumb:hover,
+        #updateNewPassword::-webkit-scrollbar-thumb:hover {
+            background: #46b324;
+        }
+
+        .loading-dots span {
+            animation: blink 1.4s infinite both;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: .2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: .4s;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: .2;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: .2;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#131712] max-w-md mx-auto sm:max-w-full">
+    <div
+        class="relative flex size-full flex-col dark justify-between group/design-root overflow-x-hidden design-root-container">
+        <div class="flex flex-col h-full">
+            <header class="sticky top-0 z-10 bg-[#131712]/80 backdrop-blur-md">
+                <div class="flex items-center p-4 pb-3">
+                    <button id="punchButton" class="text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                       <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNoanlucTVhZXN2ajJyamp3amV2ZjZjNzM5cDZwZnVoNGJsNDg3bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/pQf5O9WAjSwwpDt9go/giphy.gif" class="h-[50px] w-[50px]" alt='punch me'> Đấm tao đi !
+                    </button>
+                    <h1
+                        class="text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10 uppercase">
+                        Kiu món lẹ đê!</h1>
+                    <div id="authStatus" class="text-xs text-[#A5B6A0] absolute right-4 top-1/2 -translate-y-1/2">Chưa
+                        đăng nhập</div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
+                <div class="min-h-[calc(100vh-280px)] sm:min-h-[calc(100vh-250px)] md:min-h-[calc(100vh-220px)] flex flex-col justify-end"
+                    id="messageContainer">
+                    <div id="initialWelcomeMessage" class="bg-[#1A1F18] p-4 rounded-lg shadow-md">
+                        <p class="text-[#A5B6A0] text-sm">
+                            Chào mừng đến với Admin Console.
+                        </p>
+                        <p class="text-[#A5B6A0] text-sm mt-1">
+                            Vui lòng sử dụng lệnh
+                            <code class="text-[#53d22c] bg-[#2D372A] px-1 py-0.5 rounded-sm">/auth</code> để đăng nhập.
+                        </p>
+                        <p class="text-[#A5B6A0] text-xs mt-2">
+                            Gõ <code class="text-[#798874]">/help</code> để xem các lệnh có thể sử dụng.
+                        </p>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="fixed bottom-0 bg-[#131712]/80 backdrop-blur-md p-4 border-t border-white/10 w-full"
+                style="left: 50%; transform: translateX(-50%);">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <span id="terminalIcon" class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#A5B6A0] z-10">terminal</span>
+                        <input id="commandInput" class="form-input w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-none border-2 border-[#2D372A] bg-[#1A1F18] focus:border-[#53d22c] focus:ring-0 h-14 placeholder:text-[#A5B6A0] p-4 pl-10 text-base font-normal leading-normal transition-colors command-input-shadow" placeholder="Nhập lệnh..." type="text" value=""/>
+                        <div id="commandListPopup"
+                            class="hidden absolute bottom-full left-0 mb-2 w-full rounded-lg bg-[#1A1F18] border border-[#2D372A] shadow-xl p-2 space-y-1 z-20 max-h-48 overflow-y-auto">
+                        </div>
+                    </div>
+                    <button id="sendCommandButton" class="bg-[#53d22c] text-black rounded-xl p-3.5 flex items-center justify-center hover:bg-opacity-80 transition-colors">
+                        <span class="material-icons-outlined">send</span>
+                    </button>
+                </div>
+                <p id="commandHelpText" class="text-[#A5B6A0] text-xs font-normal leading-normal pt-2 text-center">
+                </p>
+            </footer>
+        </div>
+
+        <div id="insertModal" class="hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div
+                class="modal-content bg-[#1A1F18] p-6 rounded-xl shadow-2xl w-full max-w-lg border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-xl font-semibold text-white mb-4">Chèn Nội Dung</h2>
+                <p class="text-sm text-[#A5B6A0] mb-3">Nhập nội dung bạn muốn gửi vào ô bên dưới.</p>
+                <textarea id="insertTextarea" class="w-full h-40 p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 resize-none placeholder:text-[#798874]" placeholder="Nhập nội dung..."></textarea>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="cancelInsertButton" class="px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Hủy</button>
+                    <button id="confirmInsertButton" class="px-4 py-2 rounded-lg bg-[#53d22c] text-black hover:bg-opacity-80 transition-colors flex items-center justify-center min-w-[100px]">
+                        <span id="insertButtonText">Gửi</span>
+                        <svg id="insertLoadingSpinner" class="animate-spin h-5 w-5 text-black hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="authModal" class="hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div
+                class="modal-content bg-[#1A1F18] p-6 rounded-xl shadow-2xl w-full max-w-sm border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-xl font-semibold text-white mb-6 text-center">Đăng Nhập Admin Console</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="authUsername" class="block text-sm font-medium text-[#A5B6A0] mb-1">Tên đăng nhập</label>
+                        <input type="text" id="authUsername" name="authUsername" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập tên đăng nhập">
+                    </div>
+                    <div>
+                        <label for="authPassword" class="block text-sm font-medium text-[#A5B6A0] mb-1">Mật khẩu</label>
+                        <input type="password" id="authPassword" name="authPassword" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập mật khẩu">
+                    </div>
+                </div>
+                <div class="mt-8 flex flex-col space-y-3">
+                    <button id="confirmAuthButton" class="w-full px-4 py-3 rounded-lg bg-[#53d22c] text-black hover:bg-opacity-80 transition-colors flex items-center justify-center font-semibold">
+                        <span id="authButtonText">Đăng nhập</span>
+                        <svg id="authLoadingSpinner" class="animate-spin h-5 w-5 text-black hidden ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <button id="cancelAuthButton" class="w-full px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="createUserModal" class="hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div
+                class="modal-content bg-[#1A1F18] p-6 rounded-xl shadow-2xl w-full max-w-sm border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-xl font-semibold text-white mb-6 text-center">Tạo Người Dùng Mới</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="createUsername" class="block text-sm font-medium text-[#A5B6A0] mb-1">Tên đăng nhập mới</label>
+                        <input type="text" id="createUsername" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập tên đăng nhập">
+                    </div>
+                    <div>
+                        <label for="createPassword" class="block text-sm font-medium text-[#A5B6A0] mb-1">Mật khẩu mới</label>
+                        <input type="password" id="createPassword" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập mật khẩu">
+                    </div>
+                </div>
+                <div class="mt-8 flex flex-col space-y-3">
+                    <button id="confirmCreateUserButton" class="w-full px-4 py-3 rounded-lg bg-[#53d22c] text-black hover:bg-opacity-80 transition-colors flex items-center justify-center font-semibold">
+                        <span id="createUserButtonText">Tạo người dùng</span>
+                        <svg id="createUserLoadingSpinner" class="animate-spin h-5 w-5 text-black hidden ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <button id="cancelCreateUserButton" class="w-full px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="updatePasswordModal" class="hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div
+                class="modal-content bg-[#1A1F18] p-6 rounded-xl shadow-2xl w-full max-w-sm border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-xl font-semibold text-white mb-6 text-center">Cập Nhật Mật Khẩu</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="updateOldPassword" class="block text-sm font-medium text-[#A5B6A0] mb-1">Mật khẩu cũ</label>
+                        <input type="password" id="updateOldPassword" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập mật khẩu cũ">
+                    </div>
+                    <div>
+                        <label for="updateNewPassword" class="block text-sm font-medium text-[#A5B6A0] mb-1">Mật khẩu mới</label>
+                        <input type="password" id="updateNewPassword" class="w-full p-3 rounded-lg bg-[#131712] text-white border border-[#2D372A] focus:border-[#53d22c] focus:ring-[#53d22c] focus:ring-opacity-50 placeholder:text-[#798874]" placeholder="Nhập mật khẩu mới">
+                    </div>
+                </div>
+                <div class="mt-8 flex flex-col space-y-3">
+                    <button id="confirmUpdatePasswordButton" class="w-full px-4 py-3 rounded-lg bg-[#53d22c] text-black hover:bg-opacity-80 transition-colors flex items-center justify-center font-semibold">
+                        <span id="updatePasswordButtonText">Cập nhật</span>
+                        <svg id="updatePasswordLoadingSpinner" class="animate-spin h-5 w-5 text-black hidden ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <button id="cancelUpdatePasswordButton" class="w-full px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="videoModalOverlay" class="hidden">
+            <div id="videoModalContent">
+                <button id="closeVideoModalButton">&times;</button>
+                <iframe id="videoModalIframe" src="" allowfullscreen title="YouTube video player" frameborder="0" allow="accelerometer; autoplay" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+        </div>
+
+
+        <div class="hidden">
+            <div class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-none group-[:not(.dark)]/design-root:hidden"
+                style='background-image: url("https://placehold.co/390x320/cccccc/333333?text=Placeholder+Light"); aspect-ratio: 390 / 320;'>
+            </div>
+            <div class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-none group-[.dark]/design-root:hidden"
+                style='background-image: url("https://placehold.co/390x320/333333/cccccc?text=Placeholder+Dark"); aspect-ratio: 390 / 320;'>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Application-level user authentication state
+        let appUser = {
+            isAuthenticated: false,
+            id: null, 
+            username: null,
+            fullName: null, 
+            role: null, 
+            token: null 
+        };
+
+        // DOM Elements
+        const commandInput = document.getElementById('commandInput');
+        const sendCommandButton = document.getElementById('sendCommandButton');
+        const messageContainer = document.getElementById('messageContainer');
+        const terminalIcon = document.getElementById('terminalIcon');
+        const commandListPopup = document.getElementById('commandListPopup');
+        const commandHelpText = document.getElementById('commandHelpText');
+        const authStatusElement = document.getElementById('authStatus');
+
+        // Insert Modal Elements
+        const insertModal = document.getElementById('insertModal');
+        const insertModalContent = insertModal.querySelector('.modal-content');
+        const insertTextarea = document.getElementById('insertTextarea');
+        const confirmInsertButton = document.getElementById('confirmInsertButton');
+        const cancelInsertButton = document.getElementById('cancelInsertButton');
+        const insertButtonText = document.getElementById('insertButtonText');
+        const insertLoadingSpinner = document.getElementById('insertLoadingSpinner');
+
+        // Auth Modal Elements
+        const authModal = document.getElementById('authModal');
+        const authModalContent = authModal.querySelector('.modal-content');
+        const authUsernameInput = document.getElementById('authUsername');
+        const authPasswordInput = document.getElementById('authPassword');
+        const confirmAuthButton = document.getElementById('confirmAuthButton');
+        const cancelAuthButton = document.getElementById('cancelAuthButton');
+        const authButtonText = document.getElementById('authButtonText');
+        const authLoadingSpinner = document.getElementById('authLoadingSpinner');
+
+        // Create User Modal Elements
+        const createUserModal = document.getElementById('createUserModal');
+        const createUserModalContent = createUserModal.querySelector('.modal-content');
+        const createUsernameInput = document.getElementById('createUsername');
+        const createPasswordInput = document.getElementById('createPassword');
+        const confirmCreateUserButton = document.getElementById('confirmCreateUserButton');
+        const cancelCreateUserButton = document.getElementById('cancelCreateUserButton');
+        const createUserButtonText = document.getElementById('createUserButtonText');
+        const createUserLoadingSpinner = document.getElementById('createUserLoadingSpinner');
+
+        // Update Password Modal Elements
+        const updatePasswordModal = document.getElementById('updatePasswordModal');
+        const updatePasswordModalContent = updatePasswordModal.querySelector('.modal-content');
+        const updateOldPasswordInput = document.getElementById('updateOldPassword');
+        const updateNewPasswordInput = document.getElementById('updateNewPassword');
+        const confirmUpdatePasswordButton = document.getElementById('confirmUpdatePasswordButton');
+        const cancelUpdatePasswordButton = document.getElementById('cancelUpdatePasswordButton');
+        const updatePasswordButtonText = document.getElementById('updatePasswordButtonText');
+        const updatePasswordLoadingSpinner = document.getElementById('updatePasswordLoadingSpinner');
+
+        // Video Modal Elements
+        const punchButton = document.getElementById('punchButton');
+        const videoModalOverlay = document.getElementById('videoModalOverlay');
+        const videoModalIframe = document.getElementById('videoModalIframe');
+        const closeVideoModalButton = document.getElementById('closeVideoModalButton');
+
+
+        // Available commands with role definitions
+        const availableCommands = [
+            { name: '/auth', desc: 'Dô mần việc.', allowedRoles: ['guest', 'user', 'admin'], opensDialog: true },
+            { name: '/help', desc: 'Coi mấy cái lệnh.', allowedRoles: ['guest', 'user', 'admin'] },
+            { name: '/logout', desc: 'Đi dìa.', allowedRoles: ['user', 'admin'] },
+            { name: '/insert', desc: 'Thiêm món.', allowedRoles: ['admin'], opensDialog: true }, // User can use /insert (like /addmenu)
+            { name: '/menu', desc: 'Coi thực đơn.', allowedRoles: ['user', 'admin'] },
+            { name: '/delete', desc: 'Xó hếch mấy cái vừa kiu', allowedRoles: ['user', 'admin'] },
+            { name: '/add', desc: 'Bỏ đồ ăn dô dỏ nèo.', allowedRoles: ['user', 'admin'] },
+            { name: '/lock', desc: 'Khó hông cho kiu đồ ăn nữa.', allowedRoles: ['admin'] },
+            { name: '/unlock', desc: 'Mở cho kiu đồ ăn.', allowedRoles: ['admin'] },
+            { name: '/publish', desc: 'Nấu đi nèo.', allowedRoles: ['admin'] },
+            { name: '/aggregate', desc: 'Coi mấy cái đồ ăn nẫu kêu thử.', allowedRoles: ['admin'] },
+            { name: '/create_user', desc: 'Làm người xài mới.', allowedRoles: ['admin'], opensDialog: true },
+            { name: '/update_password', desc: 'Đẩu cái bí mật của mi đi.', allowedRoles: ['user', 'admin'], opensDialog: true }
+        ];
+        
+        // --- LocalStorage Auth Functions ---
+        const APP_USER_STORAGE_KEY = 'adminConsoleAppUser';
+
+        function saveAuthToLocalStorage(userData) {
+            try {
+                localStorage.setItem(APP_USER_STORAGE_KEY, JSON.stringify(userData));
+            } catch (e) {
+                console.error("Error saving auth to localStorage:", e);
+            }
+        }
+
+        function loadAuthFromLocalStorage() {
+            try {
+                const storedUser = localStorage.getItem(APP_USER_STORAGE_KEY);
+                if (storedUser) {
+                    const parsedUser = JSON.parse(storedUser);
+                    if (parsedUser && typeof parsedUser.isAuthenticated === 'boolean') {
+                        appUser = parsedUser;
+                        console.log("Loaded user from localStorage:", appUser);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading auth from localStorage:", e);
+                localStorage.removeItem(APP_USER_STORAGE_KEY); 
+            }
+        }
+
+        function clearAuthFromLocalStorage() {
+            try {
+                localStorage.removeItem(APP_USER_STORAGE_KEY);
+            } catch (e) {
+                console.error("Error clearing auth from localStorage:", e);
+            }
+        }
+
+
+        function updateAuthStatusUI() {
+            if (appUser.isAuthenticated) {
+                const displayName = appUser.fullName || appUser.username;
+                authStatusElement.textContent = `Đã đăng nhập: ${displayName} (${appUser.role || 'user'})`;
+                authStatusElement.classList.remove('text-red-400');
+                authStatusElement.classList.add('text-green-400');
+            } else {
+                authStatusElement.textContent = 'Chưa đăng nhập';
+                authStatusElement.classList.remove('text-green-400');
+                authStatusElement.classList.add('text-red-400'); 
+            }
+        }
+
+
+        function updateCommandHelpText() {
+            commandHelpText.innerHTML = 'Lệnh: ';
+            const relevantCommands = availableCommands.filter(cmdObj => 
+                appUser.isAuthenticated ? cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : cmdObj.allowedRoles.includes('guest')
+            );
+
+            relevantCommands.forEach((cmdObj, index) => {
+                const code = document.createElement('code');
+                code.className = 'text-[#798874]';
+                code.textContent = cmdObj.name;
+                commandHelpText.appendChild(code);
+                if (index < relevantCommands.length - 1) {
+                    commandHelpText.append(', ');
+                }
+            });
+        }
+
+
+        function populateCommandList() {
+            commandListPopup.innerHTML = '';
+            const relevantCommands = availableCommands.filter(cmdObj => 
+                 appUser.isAuthenticated ? cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : cmdObj.allowedRoles.includes('guest')
+            );
+
+            relevantCommands.forEach(cmdObj => {
+                const commandItem = document.createElement('div');
+                commandItem.textContent = `${cmdObj.name} - ${cmdObj.desc}`;
+                commandItem.classList.add('text-[#A5B6A0]', 'text-sm', 'p-2', 'rounded-md', 'hover:bg-[#2D372A]', 'cursor-pointer', 'command-item');
+                commandItem.addEventListener('click', () => {
+                    let value = cmdObj.name;
+                    if (!cmdObj.opensDialog && cmdObj.name !== '/help' && cmdObj.name !== '/logout' && cmdObj.name !== '/menu') { 
+                        value += ' ';
+                    }
+                    commandInput.value = value;
+                    commandListPopup.classList.add('hidden');
+                    commandInput.focus();
+                });
+                commandListPopup.appendChild(commandItem);
+            });
+        }
+
+        terminalIcon.addEventListener('click', (event) => {
+            event.stopPropagation();
+            populateCommandList(); 
+            commandListPopup.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!commandListPopup.classList.contains('hidden') &&
+                !commandListPopup.contains(event.target) &&
+                event.target !== terminalIcon) {
+                commandListPopup.classList.add('hidden');
+            }
+        });
+
+        function addMessage(text, type = 'command', isHtml = false) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'break-words');
+            
+            if (type === 'command') {
+                messageElement.classList.add('ml-auto', 'bg-[#2D372A]', 'max-w-[70%]');
+                const codeElement = document.createElement('code');
+                codeElement.classList.add('text-[#A5B6A0]', 'text-sm', 'whitespace-pre-wrap');
+                codeElement.textContent = text;
+                messageElement.appendChild(codeElement);
+            } else if (type === 'response' || type === 'menu_item' || type === 'webhook_response') {
+                messageElement.classList.add('mr-auto', 'bg-[#1A1F18]', 'max-w-[70%]');
+                 if (type === 'webhook_response') { 
+                    messageElement.classList.add('border', 'border-blue-500/30');
+                }
+                const pElement = document.createElement('p');
+                pElement.classList.add('text-[#A5B6A0]', 'text-sm', 'whitespace-pre-wrap');
+                if (isHtml) {
+                    pElement.innerHTML = text;
+                } else {
+                    pElement.textContent = text;
+                }
+                messageElement.appendChild(pElement);
+            } else if (type === 'error') {
+                messageElement.classList.add('mr-auto', 'bg-red-700/30', 'max-w-[70%]');
+                const pElement = document.createElement('p');
+                pElement.classList.add('text-red-300', 'text-sm', 'whitespace-pre-wrap');
+                pElement.textContent = text;
+                messageElement.appendChild(pElement);
+            }
+
+            const welcomeMessage = messageContainer.querySelector('#initialWelcomeMessage');
+            if (welcomeMessage && appUser.isAuthenticated) { 
+                 welcomeMessage.remove();
+            } else if (welcomeMessage && !appUser.isAuthenticated && messageContainer.children.length > 1 && type !== 'command') {
+                 if (messageContainer.querySelectorAll('div:not(#initialWelcomeMessage)').length > 0) {
+                    welcomeMessage.remove();
+                 }
+            }
+            
+            messageContainer.appendChild(messageElement);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        // --- Generic Modal Opener/Closer ---
+        function openModal(modalElement, firstInputElement = null) {
+            modalElement.classList.remove('hidden');
+            const modalContentElement = modalElement.querySelector('.modal-content');
+            setTimeout(() => {
+                modalContentElement.classList.remove('scale-95', 'opacity-0');
+                modalContentElement.classList.add('scale-100', 'opacity-100');
+                if (firstInputElement) {
+                    firstInputElement.focus();
+                }
+            }, 10);
+        }
+
+        function closeModal(modalElement) {
+            const modalContentElement = modalElement.querySelector('.modal-content');
+            modalContentElement.classList.remove('scale-100', 'opacity-100');
+            modalContentElement.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalElement.classList.add('hidden');
+                 commandInput.focus(); // Focus main command input after closing any modal
+            }, 300);
+        }
+        
+        // --- Submit on Enter for Modals ---
+        function setupModalSubmitOnEnter(modalInputFields, confirmButton) {
+            modalInputFields.forEach(inputField => {
+                inputField.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        confirmButton.click();
+                    }
+                });
+            });
+        }
+
+
+        // --- Insert Modal Functions ---
+        cancelInsertButton.addEventListener('click', () => closeModal(insertModal));
+        confirmInsertButton.addEventListener('click', async () => {
+            const inputText = insertTextarea.value.trim();
+            if (!inputText) {
+                addMessage("Vui lòng nhập nội dung.", "error"); 
+                return;
+            }
+            insertButtonText.classList.add('hidden');
+            insertLoadingSpinner.classList.remove('hidden');
+            confirmInsertButton.disabled = true;
+            try {
+                const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/commands';
+                const commandTextForWebhook = `/insert ${inputText}`; 
+                const headers = { 'Content-Type': 'application/json' };
+                if (appUser.isAuthenticated && appUser.token) {
+                    headers['Authorization'] = `Bearer ${appUser.token}`;
+                }
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ text: commandTextForWebhook })
+                });
+                const responseData = await response.json(); 
+                if (response.ok) {
+                    addMessage(`Phản hồi từ server: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+                    closeModal(insertModal);
+                } else {
+                    addMessage(`Lỗi từ server: ${responseData.message || response.statusText}`, "error");
+                }
+            } catch (error) {
+                addMessage(`Lỗi khi gửi lệnh /insert: ${error.message}`, "error");
+            } finally {
+                insertButtonText.classList.remove('hidden');
+                insertLoadingSpinner.classList.add('hidden');
+                confirmInsertButton.disabled = false;
+            }
+        });
+        setupModalSubmitOnEnter([insertTextarea], confirmInsertButton);
+
+
+        // --- Auth Modal Functions ---
+        cancelAuthButton.addEventListener('click', () => closeModal(authModal));
+        confirmAuthButton.addEventListener('click', async () => {
+            const username = authUsernameInput.value.trim();
+            const password = authPasswordInput.value; 
+            if (!username || !password) {
+                addMessage("Vui lòng nhập tên đăng nhập và mật khẩu.", "error"); return;
+            }
+            authButtonText.classList.add('hidden');
+            authLoadingSpinner.classList.remove('hidden');
+            confirmAuthButton.disabled = true;
+            try {
+                const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/cd168345-40c9-4130-afda-f0680e3be509/login';
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const responseData = await response.json(); 
+                if (response.ok && responseData.errorCode === 0 && responseData.message === "Success" && responseData.data) {
+                    const userDataFromWebhook = responseData.data;
+                    appUser.isAuthenticated = true;
+                    appUser.id = userDataFromWebhook.id; 
+                    appUser.username = userDataFromWebhook.username;
+                    appUser.fullName = userDataFromWebhook.fullName;
+                    appUser.role = userDataFromWebhook.isAdmin ? 'admin' : 'user';
+                    appUser.token = userDataFromWebhook.token; 
+                    saveAuthToLocalStorage(appUser); 
+                    addMessage(`Đăng nhập thành công! Chào mừng ${appUser.fullName || appUser.username} (Role: ${appUser.role}).`, 'response');
+                    updateAuthStatusUI();
+                    updateCommandHelpText(); 
+                    populateCommandList(); 
+                    const welcomeMsg = document.getElementById('initialWelcomeMessage');
+                    if(welcomeMsg) welcomeMsg.remove();
+                    closeModal(authModal);
+                } else {
+                    addMessage(responseData.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", "error");
+                }
+            } catch (error) {
+                addMessage(`Lỗi kết nối hoặc xử lý đăng nhập: ${error.message}`, "error");
+            } finally {
+                authButtonText.classList.remove('hidden');
+                authLoadingSpinner.classList.add('hidden');
+                confirmAuthButton.disabled = false;
+            }
+        });
+        setupModalSubmitOnEnter([authUsernameInput, authPasswordInput], confirmAuthButton);
+
+        // --- Create User Modal Functions ---
+        cancelCreateUserButton.addEventListener('click', () => closeModal(createUserModal));
+        confirmCreateUserButton.addEventListener('click', async () => {
+            const newUsername = createUsernameInput.value.trim();
+            const newPassword = createPasswordInput.value;
+            if (!newUsername || !newPassword) {
+                addMessage("Vui lòng nhập tên đăng nhập và mật khẩu mới.", "error"); return;
+            }
+            createUserButtonText.classList.add('hidden');
+            createUserLoadingSpinner.classList.remove('hidden');
+            confirmCreateUserButton.disabled = true;
+            try {
+                const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/commands';
+                const commandTextForWebhook = `/create_user ${newUsername} ${newPassword}`;
+                const headers = { 'Content-Type': 'application/json' };
+                if (appUser.isAuthenticated && appUser.token) {
+                    headers['Authorization'] = `Bearer ${appUser.token}`;
+                }
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ text: commandTextForWebhook })
+                });
+                const responseData = await response.json();
+                if (response.ok) {
+                    addMessage(`Phản hồi tạo người dùng: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+                    closeModal(createUserModal);
+                } else {
+                    addMessage(`Lỗi tạo người dùng: ${responseData.message || response.statusText}`, "error");
+                }
+            } catch (error) {
+                addMessage(`Lỗi khi tạo người dùng: ${error.message}`, "error");
+            } finally {
+                createUserButtonText.classList.remove('hidden');
+                createUserLoadingSpinner.classList.add('hidden');
+                confirmCreateUserButton.disabled = false;
+            }
+        });
+        setupModalSubmitOnEnter([createUsernameInput, createPasswordInput], confirmCreateUserButton);
+
+
+        // --- Update Password Modal Functions ---
+        cancelUpdatePasswordButton.addEventListener('click', () => closeModal(updatePasswordModal));
+        confirmUpdatePasswordButton.addEventListener('click', async () => {
+            const oldPassword = updateOldPasswordInput.value;
+            const newPassword = updateNewPasswordInput.value;
+            if (!oldPassword || !newPassword) {
+                addMessage("Vui lòng nhập mật khẩu cũ và mật khẩu mới.", "error"); return;
+            }
+            if (oldPassword === newPassword) {
+                addMessage("Mật khẩu mới phải khác mật khẩu cũ.", "error"); return;
+            }
+            updatePasswordButtonText.classList.add('hidden');
+            updatePasswordLoadingSpinner.classList.remove('hidden');
+            confirmUpdatePasswordButton.disabled = true;
+            try {
+                const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/commands';
+                const commandTextForWebhook = `/update_password ${oldPassword} ${newPassword}`;
+                const headers = { 'Content-Type': 'application/json' };
+                if (appUser.isAuthenticated && appUser.token) {
+                    headers['Authorization'] = `Bearer ${appUser.token}`;
+                }
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ text: commandTextForWebhook })
+                });
+                const responseData = await response.json();
+                if (response.ok) {
+                    addMessage(`Phản hồi cập nhật mật khẩu: ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+                    closeModal(updatePasswordModal);
+                } else {
+                    addMessage(`Lỗi cập nhật mật khẩu: ${responseData.message || response.statusText}`, "error");
+                }
+            } catch (error) {
+                addMessage(`Lỗi khi cập nhật mật khẩu: ${error.message}`, "error");
+            } finally {
+                updatePasswordButtonText.classList.remove('hidden');
+                updatePasswordLoadingSpinner.classList.add('hidden');
+                confirmUpdatePasswordButton.disabled = false;
+            }
+        });
+        setupModalSubmitOnEnter([updateOldPasswordInput, updateNewPasswordInput], confirmUpdatePasswordButton);
+
+        // --- Video Modal Functions ---
+        punchButton.addEventListener('click', () => {
+            // Replace with your actual video URL or a placeholder if it's dynamic
+            const videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; 
+            // It's better to use YouTube's embed URL format: https://www.youtube.com/embed/VIDEO_ID
+            // For example: const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ"; // Rick Astley
+            
+            videoModalIframe.src = videoUrl
+            videoModalOverlay.style.display = 'flex'
+            videoModalOverlay.classList.remove('hidden');
+        });
+
+        closeVideoModalButton.addEventListener('click', () => {
+            videoModalIframe.src = ""; // Stop video playback
+            videoModalOverlay.classList.add('hidden');
+            videoModalOverlay.style.display = 'none'
+        });
+
+
+        async function handleCommand(command) {
+            const commandName = command.trim().split(' ')[0];
+            const commandObj = availableCommands.find(c => c.name === commandName);
+
+            let isAllowed = false;
+            if (appUser.isAuthenticated) {
+                if (commandObj && (commandObj.allowedRoles.includes(appUser.role) || commandObj.allowedRoles.includes('all'))) {
+                    isAllowed = true;
+                } else if (!commandObj && appUser.role === 'admin') { 
+                    isAllowed = true; 
+                }
+            } else { 
+                if (commandObj && commandObj.allowedRoles.includes('guest')) {
+                    isAllowed = true;
+                }
+            }
+
+            if (!isAllowed) {
+                addMessage(`Lệnh "${commandName}" không hợp lệ hoặc bạn không có quyền thực hiện. Gõ /help để xem các lệnh.`, "error");
+                commandInput.value = ''; 
+                return;
+            }
+            
+            addMessage(command, 'command'); 
+            
+            if (commandName === '/auth') {
+                openModal(authModal, authUsernameInput);
+                return;
+            } else if (commandName === '/logout') {
+                if (appUser.isAuthenticated) {
+                    const oldUsername = appUser.fullName || appUser.username;
+                    clearAuthFromLocalStorage();
+                    appUser = { isAuthenticated: false, id: null, username: null, fullName: null, role: null, token: null };
+                    updateAuthStatusUI();
+                    updateCommandHelpText(); 
+                    populateCommandList(); 
+                    addMessage(`Người dùng ${oldUsername} đã đăng xuất.`, 'response');
+                    const welcomeMsg = document.getElementById('initialWelcomeMessage');
+                    if (!welcomeMsg && messageContainer.children.length === 1) { 
+                         messageContainer.innerHTML = `
+                            <div id="initialWelcomeMessage" class="bg-[#1A1F18] p-4 rounded-lg shadow-md">
+                                <p class="text-[#A5B6A0] text-sm">Bạn đã đăng xuất.</p>
+                                <p class="text-[#A5B6A0] text-sm mt-1">Vui lòng sử dụng lệnh <code class="text-[#53d22c] bg-[#2D372A] px-1 py-0.5 rounded-sm">/auth</code> để đăng nhập lại.</p>
+                                <p class="text-[#A5B6A0] text-xs mt-2">Gõ <code class="text-[#798874]">/help</code> để xem các lệnh.</p>
+                            </div>`;
+                    }
+                } else {
+                    addMessage("Bạn chưa đăng nhập.", "error");
+                }
+                return;
+            } else if (commandName === '/insert') { 
+                openModal(insertModal, insertTextarea); 
+                return; 
+            } else if (commandName === '/create_user') {
+                openModal(createUserModal, createUsernameInput);
+                return;
+            } else if (commandName === '/update_password') {
+                openModal(updatePasswordModal, updateOldPasswordInput);
+                return;
+            } else if (commandName === '/menu') { 
+                const loadingId = `loading-webhook-menu-${Date.now()}`;
+                const tempLoadingMsg = document.createElement('div');
+                tempLoadingMsg.id = loadingId;
+                tempLoadingMsg.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'mr-auto', 'max-w-[70%]');
+                tempLoadingMsg.innerHTML = `<p class="text-[#A5B6A0] text-sm flex items-center">Đang tải menu từ server <span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span></p>`;
+                messageContainer.appendChild(tempLoadingMsg);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+
+                try {
+                    const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/commands';
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (appUser.isAuthenticated && appUser.token) {
+                        headers['Authorization'] = `Bearer ${appUser.token}`;
+                    }
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({ text: "/menu" }) 
+                    });
+                    const loadingElement = document.getElementById(loadingId);
+                    if(loadingElement) loadingElement.remove();
+                    const responseData = await response.json();
+                    if (response.ok) {
+                        let menuDisplay = "<strong>📜 DANH SÁCH MENU (từ Server) 📜</strong>\n\n";
+                        if (typeof responseData === 'string') {
+                            menuDisplay += responseData.replace(/\n/g, "<br>"); 
+                        } else if (Array.isArray(responseData)) {
+                             responseData.forEach((item, index) => {
+                                const itemName = item.name || item.itemName || `Món ${index + 1}`;
+                                const itemPrice = item.price || item.itemPrice || "";
+                                menuDisplay += `<strong>${index + 1}. ${itemName}</strong> ${itemPrice ? `- ${itemPrice}` : ''}\n`;
+                            });
+                        } else if (typeof responseData === 'object' && responseData !== null) {
+                             menuDisplay += JSON.stringify(responseData, null, 2); 
+                        } else {
+                            menuDisplay += "Không có dữ liệu menu hoặc định dạng không xác định.";
+                        }
+                        addMessage(menuDisplay, 'menu_item', true);
+                    } else {
+                        addMessage(`Lỗi khi tải menu từ server: ${responseData.message || response.statusText}`, "error");
+                    }
+                } catch (error) {
+                    const loadingElement = document.getElementById(loadingId);
+                    if(loadingElement) loadingElement.remove();
+                    addMessage(`Lỗi khi tải menu: ${error.message}`, "error");
+                }
+                return;
+            } else if (commandName === '/help') {
+                let helpMessage = "<strong>Các lệnh có sẵn:</strong>\n";
+                 const relevantCommandsForHelp = availableCommands.filter(cmdObj => 
+                    appUser.isAuthenticated ? cmdObj.allowedRoles.includes(appUser.role) || cmdObj.allowedRoles.includes('all') : cmdObj.allowedRoles.includes('guest')
+                );
+                relevantCommandsForHelp.forEach(cmdObj => {
+                    helpMessage += `- <strong>${cmdObj.name}</strong>: ${cmdObj.desc}\n`;
+                });
+                addMessage(helpMessage, 'response', true);
+            }
+            else { 
+                if (appUser.isAuthenticated && appUser.role === 'admin' && command.trim().startsWith('/')) {
+                    const loadingId = `loading-webhook-${Date.now()}`; 
+                    const tempLoadingMsg = document.createElement('div');
+                    tempLoadingMsg.id = loadingId;
+                    tempLoadingMsg.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'mr-auto', 'max-w-[70%]');
+                    tempLoadingMsg.innerHTML = `<p class="text-[#A5B6A0] text-sm flex items-center">Đang gửi lệnh "${command}" <span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span></p>`;
+                    messageContainer.appendChild(tempLoadingMsg);
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                    try {
+                        const webhookUrl = 'https://dev-workflow.aquanets.com/webhook/commands';
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (appUser.isAuthenticated && appUser.token) {
+                            headers['Authorization'] = `Bearer ${appUser.token}`;
+                        }
+                        const response = await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ text: command.trim() }) 
+                        });
+                        const loadingElement = document.getElementById(loadingId);
+                        if(loadingElement) loadingElement.remove();
+                        const responseData = await response.json();
+                        if (response.ok) {
+                            addMessage(`Phản hồi từ server cho lệnh "${command}": ${JSON.stringify(responseData, null, 2)}`, 'webhook_response');
+                        } else {
+                            addMessage(`Lỗi từ server cho lệnh "${command}": ${responseData.message || response.statusText}`, "error");
+                        }
+                    } catch (error) {
+                         const loadingElement = document.getElementById(loadingId);
+                         if(loadingElement) loadingElement.remove();
+                        addMessage(`Lỗi khi gửi lệnh "${command}": ${error.message}`, "error");
+                    }
+                } else {
+                    addMessage(`Lệnh không xác định hoặc không được phép: "${command}". Gõ /help để xem các lệnh.`, 'error');
+                }
+            }
+        }
+
+        sendCommandButton.addEventListener('click', () => {
+            const command = commandInput.value.trim();
+            if (command) {
+                handleCommand(command);
+                commandInput.value = '';
+            }
+        });
+
+        commandInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendCommandButton.click();
+            }
+        });
+        
+        // Initial setup
+        loadAuthFromLocalStorage(); 
+        populateCommandList(); 
+        updateCommandHelpText(); 
+        updateAuthStatusUI(); 
+
+
+        function alignFooterToBody() {
+            const bodyStyles = window.getComputedStyle(document.body);
+            const footerElement = document.querySelector('footer.fixed');
+            
+            if (bodyStyles.maxWidth !== 'none' && bodyStyles.maxWidth !== '100%') {
+                footerElement.style.maxWidth = bodyStyles.maxWidth;
+                if (bodyStyles.marginLeft === 'auto' && bodyStyles.marginRight === 'auto') {
+                    footerElement.style.left = '50%';
+                    footerElement.style.transform = 'translateX(-50%)';
+                } else {
+                    footerElement.style.left = bodyStyles.marginLeft;
+                    footerElement.style.transform = 'none';
+                }
+            } else { 
+                footerElement.style.maxWidth = '100%';
+                footerElement.style.left = '0';
+                footerElement.style.transform = 'none';
+            }
+        }
+
+        window.addEventListener('resize', alignFooterToBody);
+        window.addEventListener('load', alignFooterToBody); 
+        alignFooterToBody(); 
+
+    </script>
+</body>
+
+</html>
