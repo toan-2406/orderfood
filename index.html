@@ -343,7 +343,7 @@
         <div id="videoModalOverlay" class="hidden">
             <div id="videoModalContent">
                 <button id="closeVideoModalButton">&times;</button>
-                <iframe id="videoModalIframe" src="" allowfullscreen title="YouTube video player" frameborder="0" allow="accelerometer; autoplay" autoplay=1 referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <iframe id="videoModalIframe" src="" allowfullscreen title="YouTube video player" frameborder="0" allow="accelerometer; autoplay"  referrerpolicy="strict-origin-when-cross-origin"></iframe>
             </div>
         </div>
 
@@ -802,7 +802,7 @@
         // --- Video Modal Functions ---
         punchButton.addEventListener('click', () => {
             // Replace with your actual video URL or a placeholder if it's dynamic
-            const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ?si=Eo_EAjawJqNMbw0X"; 
+            const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ?si=Eo_EAjawJqNMbw0X?autoplay=1"; 
             //<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=Eo_EAjawJqNMbw0X" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             // It's better to use YouTube's embed URL format: https://www.youtube.com/embed/VIDEO_ID
             // For example: const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ"; // Rick Astley
