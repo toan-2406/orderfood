@@ -222,7 +222,11 @@ export async function handleCommand(command) {
         return;
     }
     else { 
-        if (appUser.isAuthenticated && appUser.role === 'admin' && command.trim().startsWith('/')) {
+        if (
+            appUser.isAuthenticated &&
+            commandObj && // lệnh hợp lệ
+            (commandObj.allowedRoles.includes(appUser.role) || commandObj.allowedRoles.includes('all'))
+        ) {
             await handleWebhookCommand(command);
         } else {
             addMessage(`Lệnh không xác định hoặc không được phép: "${command}". Gõ /help để xem các lệnh.`, 'error');
@@ -642,4 +646,4 @@ function showStickyMenuCard() {
 }
 
 // Export createStickyMenuCard for use in other modules
-export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard }; 
+export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard };
