@@ -64,7 +64,10 @@ function setupEventListeners() {
     }
 
     if (cancelSpinButton) {
-        cancelSpinButton.addEventListener('click', closeConfirmationModal);
+        cancelSpinButton.addEventListener('click', () => {
+            closeConfirmationModal();
+            resetWheel(); // Reset selectedDish when canceling
+        });
     }
 
     // Modal overlay clicks
@@ -123,7 +126,15 @@ function closeWheelModal() {
     wheelModal.classList.remove('show');
     setTimeout(() => {
         wheelModal.classList.add('hidden');
-        resetWheel();
+        // Only reset wheel visuals, not selectedDish when going to confirmation
+        if (wheelCanvas) {
+            wheelCanvas.style.transform = 'rotate(0deg)';
+        }
+        isSpinning = false;
+        spinButton.disabled = false;
+        if (spinButton?.querySelector('#spinButtonText')) {
+            spinButton.querySelector('#spinButtonText').textContent = 'QUAY!';
+        }
     }, 300);
 }
 
@@ -202,7 +213,13 @@ function drawWheel() {
 }
 
 function handleSpin() {
-    if (isSpinning || currentMenuData.length === 0) return;
+    console.log('=== handleSpin called ===');
+    console.log('currentMenuData:', currentMenuData);
+    
+    if (isSpinning || currentMenuData.length === 0) {
+        console.log('Cannot spin: isSpinning =', isSpinning, 'menuLength =', currentMenuData.length);
+        return;
+    }
 
     isSpinning = true;
     spinButton.disabled = true;
@@ -214,6 +231,8 @@ function handleSpin() {
     const randomAngle = Math.random() * 360; // Random final angle
     const totalRotation = (minRotations + randomRotations) * 360 + randomAngle;
 
+    console.log('Spin parameters:', { minRotations, randomRotations, randomAngle, totalRotation });
+
     // Apply rotation to canvas
     wheelCanvas.style.transform = `rotate(${totalRotation}deg)`;
 
@@ -223,7 +242,16 @@ function handleSpin() {
         const anglePerSlice = 360 / currentMenuData.length;
         const selectedIndex = Math.floor(normalizedAngle / anglePerSlice);
         
+        console.log('Selection calculation:', { 
+            normalizedAngle, 
+            anglePerSlice, 
+            selectedIndex,
+            menuLength: currentMenuData.length 
+        });
+        
         selectedDish = currentMenuData[selectedIndex];
+        
+        console.log('Selected dish after calculation:', selectedDish);
         
         // Reset spinning state
         isSpinning = false;
@@ -250,7 +278,13 @@ function showSpinResult() {
 }
 
 function handleConfirmOrder() {
-    if (!selectedDish) return;
+    console.log('=== handleConfirmOrder called ===');
+    console.log('selectedDish:', selectedDish);
+    
+    if (!selectedDish) {
+        console.log('selectedDish is null/undefined');
+        return;
+    }
 
     // Add success animation
     confirmOrderButton.classList.add('success-bounce');
@@ -260,15 +294,19 @@ function handleConfirmOrder() {
 
     // Send add command
     setTimeout(async () => {
+        console.log('About to call sendAddCommand with ID:', selectedDish.id);
         try {
             await sendAddCommand(selectedDish.id);
-            addMessage(`🎰 <strong>QUAY THÀNH CÔNG!</strong><br><br>Đã thêm "${selectedDish.name}" vào đơn hàng từ vòng quay xui xoẻ!`, 'response', true);
+            console.log('sendAddCommand completed successfully');
+            addMessage(`🎰 <strong>QUAY THÀNH CÔNG!</strong><br><br>Đã thêm "${selectedDish.name}" vào đơn hàng từ vòng quay may mắn!`, 'response', true);
         } catch (error) {
+            console.log('sendAddCommand error:', error);
             addMessage(`❌ Lỗi khi đặt món: ${error.message}`, 'error', true);
         }
         
-        // Remove animation class
+        // Remove animation class and reset for next spin
         confirmOrderButton.classList.remove('success-bounce');
+        resetWheel(); // Reset selectedDish after successful order
     }, 300);
 }
 
@@ -284,7 +322,7 @@ function resetWheel() {
     if (wheelCanvas) {
         wheelCanvas.style.transform = 'rotate(0deg)';
     }
-    selectedDish = null;
+    selectedDish = null;  // Only reset when truly starting over
     isSpinning = false;
     spinButton.disabled = false;
     if (spinButton?.querySelector('#spinButtonText')) {
