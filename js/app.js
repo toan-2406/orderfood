@@ -2,6 +2,7 @@ import { initializeAuth } from './auth.js';
 import { initializeModalElements, setupModalEventListeners } from './modals.js';
 import { initializeCommandElements, setupCommandListeners, updateCommandHelpText, populateCommandList, handleCommand, setupCommandSuggestions } from './commands.js';
 import { alignFooterToBody } from './ui-utils.js';
+import { initializeWheelOfFortune, updateRandomFoodButtonVisibility } from './wheel-fortune.js';
 
 let commandInput, sendCommandButton;
 
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeAuth();
     initializeModalElements();
     initializeCommandElements();
+    initializeWheelOfFortune();
     
     commandInput = document.getElementById('commandInput');
     sendCommandButton = document.getElementById('sendCommandButton');

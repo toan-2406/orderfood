@@ -79,7 +79,7 @@
                         </div>
                         
                         <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #798874; text-align: center;">
-                            �� Tip: Nhập "/" để xem gợi ý lệnh tự động
+                             Tip: Nhập "/" để xem gợi ý lệnh tự động
                         </div>
                     </div>
                 </div>
@@ -208,6 +208,74 @@
                         </svg>
                     </button>
                     <button id="cancelUpdatePasswordButton" class="w-full px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Random Food Suggestion Button -->
+        <button id="randomFoodButton" class="hidden fixed right-6 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-full shadow-2xl z-30 transition-all duration-300 animate-pulse">
+            <div class="flex flex-col items-center">
+                <span class="material-icons-outlined text-2xl mb-1">casino</span>
+                <span class="text-sm whitespace-nowrap">Bạn không<br>biết ăn gì?</span>
+            </div>
+        </button>
+
+        <!-- Wheel of Fortune Modal -->
+        <div id="wheelModal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div class="modal-content bg-[#1A1F18] p-8 rounded-xl shadow-2xl w-full max-w-2xl border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-2xl font-semibold text-white mb-6 text-center">🎰 VÒNG QUAY XUI Xoẻ</h2>
+                
+                <div class="relative flex justify-center items-center mb-8">
+                    <!-- Wheel Container -->
+                    <div class="relative">
+                        <canvas id="wheelCanvas" width="300" height="300" class="rounded-full border-4 border-[#53d22c] shadow-lg"></canvas>
+                        
+                        <!-- Pointer -->
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 z-10">
+                            <div class="w-0 h-0 border-l-4 border-r-4 border-b-8 border-l-transparent border-r-transparent border-b-red-500"></div>
+                        </div>
+                        
+                        <!-- Center Button -->
+                        <button id="spinButton" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#53d22c] hover:bg-[#46b324] text-black font-bold py-3 px-6 rounded-full shadow-lg transition-colors z-10">
+                            <span id="spinButtonText">QUAY!</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <p class="text-[#A5B6A0] text-sm">Click "QUAY!" để bắt đầu vòng quay XUI Xoẻ</p>
+                </div>
+                
+                <div class="flex justify-center space-x-3">
+                    <button id="closeWheelButton" class="px-6 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+            <div class="modal-overlay fixed inset-0"></div>
+            <div class="modal-content bg-[#1A1F18] p-6 rounded-xl shadow-2xl w-full max-w-md border border-[#2D372A] transform transition-all duration-300 ease-out scale-95 opacity-0">
+                <h2 class="text-xl font-semibold text-white mb-6 text-center">🎯 KẾT QUẢ VÒNG QUAY</h2>
+                
+                <div class="text-center mb-6">
+                    <div class="text-6xl mb-4">🍽️</div>
+                    <h3 id="selectedDishName" class="text-2xl font-bold text-[#53d22c] mb-2"></h3>
+                    <p id="selectedDishPrice" class="text-[#A5B6A0] text-lg mb-4"></p>
+                    <p class="text-[#A5B6A0] text-sm">Bạn có muốn đặt món này không?</p>
+                </div>
+                
+                <div class="flex flex-col space-y-3">
+                    <button id="confirmOrderButton" class="w-full px-4 py-3 rounded-lg bg-[#53d22c] text-black hover:bg-opacity-80 transition-colors flex items-center justify-center font-semibold">
+                        <span class="material-icons-outlined mr-2">restaurant</span>
+                        <span>Đặt món này</span>
+                    </button>
+                    <button id="spinAgainButton" class="w-full px-4 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors flex items-center justify-center font-semibold">
+                        <span class="material-icons-outlined mr-2">refresh</span>
+                        <span>Quay lại</span>
+                    </button>
+                    <button id="cancelSpinButton" class="w-full px-4 py-2 rounded-lg text-[#A5B6A0] hover:bg-white/10 transition-colors">Bỏ qua</button>
                 </div>
             </div>
         </div>

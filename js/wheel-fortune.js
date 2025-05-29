@@ -1,0 +1,312 @@
+import { appUser } from './auth.js';
+import { sendAddCommand } from './commands.js';
+import { addMessage } from './ui-utils.js';
+
+let wheelModal, confirmationModal;
+let wheelCanvas, wheelCtx;
+let spinButton, closeWheelButton;
+let selectedDishName, selectedDishPrice, confirmOrderButton, spinAgainButton, cancelSpinButton;
+let currentMenuData = [];
+let selectedDish = null;
+let isSpinning = false;
+
+// Colors for wheel segments
+const wheelColors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+    '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D2B4DE'
+];
+
+export function initializeWheelOfFortune() {
+    // Get DOM elements
+    wheelModal = document.getElementById('wheelModal');
+    confirmationModal = document.getElementById('confirmationModal');
+    wheelCanvas = document.getElementById('wheelCanvas');
+    spinButton = document.getElementById('spinButton');
+    closeWheelButton = document.getElementById('closeWheelButton');
+    
+    selectedDishName = document.getElementById('selectedDishName');
+    selectedDishPrice = document.getElementById('selectedDishPrice');
+    confirmOrderButton = document.getElementById('confirmOrderButton');
+    spinAgainButton = document.getElementById('spinAgainButton');
+    cancelSpinButton = document.getElementById('cancelSpinButton');
+
+    if (wheelCanvas) {
+        wheelCtx = wheelCanvas.getContext('2d');
+    }
+
+    setupEventListeners();
+}
+
+function setupEventListeners() {
+    // Random food button click
+    const randomFoodButton = document.getElementById('randomFoodButton');
+    if (randomFoodButton) {
+        randomFoodButton.addEventListener('click', handleRandomFoodClick);
+    }
+
+    // Wheel modal events
+    if (spinButton) {
+        spinButton.addEventListener('click', handleSpin);
+    }
+
+    if (closeWheelButton) {
+        closeWheelButton.addEventListener('click', closeWheelModal);
+    }
+
+    // Confirmation modal events
+    if (confirmOrderButton) {
+        confirmOrderButton.addEventListener('click', handleConfirmOrder);
+    }
+
+    if (spinAgainButton) {
+        spinAgainButton.addEventListener('click', handleSpinAgain);
+    }
+
+    if (cancelSpinButton) {
+        cancelSpinButton.addEventListener('click', closeConfirmationModal);
+    }
+
+    // Modal overlay clicks
+    wheelModal?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeWheelModal();
+        }
+    });
+
+    confirmationModal?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeConfirmationModal();
+        }
+    });
+}
+
+function handleRandomFoodClick() {
+    // Get current menu data from sticky menu
+    const stickyMenuCard = document.querySelector('.sticky-menu-card');
+    if (!stickyMenuCard) {
+        addMessage('❌ Không có menu khả dụng để quay!', 'error', true);
+        return;
+    }
+
+    // Extract menu data from sticky menu items
+    const menuItems = stickyMenuCard.querySelectorAll('.sticky-menu-item');
+    currentMenuData = Array.from(menuItems).map(item => {
+        const name = item.querySelector('.sticky-menu-item-name')?.textContent || 'Món ăn';
+        const priceText = item.querySelector('.sticky-menu-item-price')?.textContent || '';
+        const id = item.dataset.id;
+        
+        return {
+            id: id,
+            name: name,
+            price: priceText
+        };
+    });
+
+    if (currentMenuData.length === 0) {
+        addMessage('❌ Menu trống, không thể quay!', 'error', true);
+        return;
+    }
+
+    openWheelModal();
+}
+
+function openWheelModal() {
+    wheelModal.classList.remove('hidden');
+    setTimeout(() => {
+        wheelModal.classList.add('show');
+        drawWheel();
+    }, 10);
+}
+
+function closeWheelModal() {
+    wheelModal.classList.remove('show');
+    setTimeout(() => {
+        wheelModal.classList.add('hidden');
+        resetWheel();
+    }, 300);
+}
+
+function openConfirmationModal() {
+    confirmationModal.classList.remove('hidden');
+    setTimeout(() => {
+        confirmationModal.classList.add('show');
+    }, 10);
+}
+
+function closeConfirmationModal() {
+    confirmationModal.classList.remove('show');
+    setTimeout(() => {
+        confirmationModal.classList.add('hidden');
+    }, 300);
+}
+
+function drawWheel() {
+    if (!wheelCtx || currentMenuData.length === 0) return;
+
+    const centerX = wheelCanvas.width / 2;
+    const centerY = wheelCanvas.height / 2;
+    const radius = 140;
+
+    // Clear canvas
+    wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+
+    const anglePerSlice = (2 * Math.PI) / currentMenuData.length;
+
+    currentMenuData.forEach((item, index) => {
+        const startAngle = index * anglePerSlice;
+        const endAngle = startAngle + anglePerSlice;
+
+        // Draw slice
+        wheelCtx.beginPath();
+        wheelCtx.moveTo(centerX, centerY);
+        wheelCtx.arc(centerX, centerY, radius, startAngle, endAngle);
+        wheelCtx.closePath();
+
+        // Use color from palette, cycling if needed
+        wheelCtx.fillStyle = wheelColors[index % wheelColors.length];
+        wheelCtx.fill();
+
+        // Draw border
+        wheelCtx.strokeStyle = '#fff';
+        wheelCtx.lineWidth = 2;
+        wheelCtx.stroke();
+
+        // Draw text
+        wheelCtx.save();
+        wheelCtx.translate(centerX, centerY);
+        wheelCtx.rotate(startAngle + anglePerSlice / 2);
+        wheelCtx.fillStyle = '#000';
+        wheelCtx.font = 'bold 12px Arial';
+        wheelCtx.textAlign = 'left';
+        wheelCtx.textBaseline = 'middle';
+
+        // Truncate long names
+        let displayName = item.name;
+        if (displayName.length > 12) {
+            displayName = displayName.substring(0, 12) + '...';
+        }
+
+        wheelCtx.fillText(displayName, 10, 0);
+        wheelCtx.restore();
+    });
+
+    // Draw center circle
+    wheelCtx.beginPath();
+    wheelCtx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+    wheelCtx.fillStyle = '#53d22c';
+    wheelCtx.fill();
+    wheelCtx.strokeStyle = '#fff';
+    wheelCtx.lineWidth = 3;
+    wheelCtx.stroke();
+}
+
+function handleSpin() {
+    if (isSpinning || currentMenuData.length === 0) return;
+
+    isSpinning = true;
+    spinButton.disabled = true;
+    spinButton.querySelector('#spinButtonText').textContent = 'ĐANG QUAY...';
+
+    // Generate random rotation (minimum 5 full rotations + random angle)
+    const minRotations = 5;
+    const randomRotations = Math.random() * 3; // 0-3 additional rotations
+    const randomAngle = Math.random() * 360; // Random final angle
+    const totalRotation = (minRotations + randomRotations) * 360 + randomAngle;
+
+    // Apply rotation to canvas
+    wheelCanvas.style.transform = `rotate(${totalRotation}deg)`;
+
+    // Calculate which slice was selected based on final angle
+    setTimeout(() => {
+        const normalizedAngle = (360 - (randomAngle % 360)) % 360;
+        const anglePerSlice = 360 / currentMenuData.length;
+        const selectedIndex = Math.floor(normalizedAngle / anglePerSlice);
+        
+        selectedDish = currentMenuData[selectedIndex];
+        
+        // Reset spinning state
+        isSpinning = false;
+        spinButton.disabled = false;
+        spinButton.querySelector('#spinButtonText').textContent = 'QUAY!';
+
+        // Show result
+        showSpinResult();
+    }, 4000); // Match CSS animation duration
+}
+
+function showSpinResult() {
+    if (!selectedDish) return;
+
+    // Update confirmation modal with result
+    selectedDishName.textContent = selectedDish.name;
+    selectedDishPrice.textContent = selectedDish.price || '';
+
+    // Close wheel modal and open confirmation
+    closeWheelModal();
+    setTimeout(() => {
+        openConfirmationModal();
+    }, 300);
+}
+
+function handleConfirmOrder() {
+    if (!selectedDish) return;
+
+    // Add success animation
+    confirmOrderButton.classList.add('success-bounce');
+    
+    // Close modal
+    closeConfirmationModal();
+
+    // Send add command
+    setTimeout(async () => {
+        try {
+            await sendAddCommand(selectedDish.id);
+            addMessage(`🎰 <strong>QUAY THÀNH CÔNG!</strong><br><br>Đã thêm "${selectedDish.name}" vào đơn hàng từ vòng quay xui xoẻ!`, 'response', true);
+        } catch (error) {
+            addMessage(`❌ Lỗi khi đặt món: ${error.message}`, 'error', true);
+        }
+        
+        // Remove animation class
+        confirmOrderButton.classList.remove('success-bounce');
+    }, 300);
+}
+
+function handleSpinAgain() {
+    closeConfirmationModal();
+    setTimeout(() => {
+        resetWheel();
+        openWheelModal();
+    }, 300);
+}
+
+function resetWheel() {
+    if (wheelCanvas) {
+        wheelCanvas.style.transform = 'rotate(0deg)';
+    }
+    selectedDish = null;
+    isSpinning = false;
+    spinButton.disabled = false;
+    if (spinButton?.querySelector('#spinButtonText')) {
+        spinButton.querySelector('#spinButtonText').textContent = 'QUAY!';
+    }
+}
+
+// Function to check if random food button should be visible
+export function updateRandomFoodButtonVisibility() {
+    const randomFoodButton = document.getElementById('randomFoodButton');
+    if (!randomFoodButton) return;
+
+    // Check conditions:
+    // 1. User must be authenticated with role 'user' or 'admin' 
+    // 2. Must have a menu available (sticky menu card exists and visible)
+    const hasValidRole = appUser.isAuthenticated && (appUser.role === 'user' || appUser.role === 'admin');
+    const stickyMenuCard = document.querySelector('.sticky-menu-card:not(.hidden)');
+    const hasMenu = stickyMenuCard && stickyMenuCard.querySelectorAll('.sticky-menu-item').length > 0;
+
+    if (hasValidRole && hasMenu) {
+        randomFoodButton.classList.remove('hidden');
+    } else {
+        randomFoodButton.classList.add('hidden');
+    }
+} 

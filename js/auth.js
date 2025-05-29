@@ -75,4 +75,13 @@ export function updateAuthStatusUI() {
         authStatusElement.classList.remove('text-green-400');
         authStatusElement.classList.add('text-red-400'); 
     }
+
+    // Update random food button visibility when auth status changes
+    setTimeout(() => {
+        import('./wheel-fortune.js').then(({ updateRandomFoodButtonVisibility }) => {
+            updateRandomFoodButtonVisibility();
+        }).catch(() => {
+            // Module might not be loaded yet, ignore error
+        });
+    }, 100);
 } 

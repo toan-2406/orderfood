@@ -565,6 +565,12 @@ function createStickyMenuCard(menuData) {
     
     // Only show for authenticated users with menu data
     if (!appUser.isAuthenticated || !menuData || !Array.isArray(menuData) || menuData.length === 0) {
+        // Update random food button visibility when no menu
+        setTimeout(() => {
+            import('./wheel-fortune.js').then(({ updateRandomFoodButtonVisibility }) => {
+                updateRandomFoodButtonVisibility();
+            });
+        }, 100);
         return;
     }
     
@@ -643,6 +649,13 @@ function createStickyMenuCard(menuData) {
         stickyMenuCard.classList.add('collapsed');
         toggleButton.textContent = '+';
     }
+
+    // Update random food button visibility after menu is created
+    setTimeout(() => {
+        import('./wheel-fortune.js').then(({ updateRandomFoodButtonVisibility }) => {
+            updateRandomFoodButtonVisibility();
+        });
+    }, 100);
 }
 
 function hideStickyMenuCard() {
@@ -650,6 +663,13 @@ function hideStickyMenuCard() {
     if (existingStickyMenu) {
         existingStickyMenu.classList.add('hidden');
     }
+    
+    // Update random food button visibility when menu is hidden
+    setTimeout(() => {
+        import('./wheel-fortune.js').then(({ updateRandomFoodButtonVisibility }) => {
+            updateRandomFoodButtonVisibility();
+        });
+    }, 100);
 }
 
 function showStickyMenuCard() {
@@ -657,6 +677,13 @@ function showStickyMenuCard() {
     if (existingStickyMenu) {
         existingStickyMenu.classList.remove('hidden');
     }
+    
+    // Update random food button visibility when menu is shown
+    setTimeout(() => {
+        import('./wheel-fortune.js').then(({ updateRandomFoodButtonVisibility }) => {
+            updateRandomFoodButtonVisibility();
+        });
+    }, 100);
 }
 
 // Export createStickyMenuCard for use in other modules
