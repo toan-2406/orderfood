@@ -98,7 +98,7 @@ export function closeModal(modalElement) {
 export function setupModalSubmitOnEnter(modalInputFields, confirmButton) {
     modalInputFields.forEach(inputField => {
         inputField.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 confirmButton.click();
             }
