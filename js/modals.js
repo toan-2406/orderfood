@@ -1,6 +1,7 @@
 import { CONFIG } from './constants.js';
 import { appUser, saveAuthToLocalStorage, updateAuthStatusUI } from './auth.js';
 import { addMessage, openModal, closeModal, setupModalSubmitOnEnter } from './ui-utils.js';
+import { openWheelModalWithMenuCheck } from '../js/wheel-fortune.js';
 
 // DOM Elements for modals
 let modalElements = {};
@@ -155,6 +156,9 @@ async function handleAuthSubmit() {
                 await loadWelcomeMessageForUser();
             }
             
+            // Open wheel of fortune modal after successful login and UI updates, before closing auth modal
+            await openWheelModalWithMenuCheck();
+
             closeModal(modalElements.authModal);
         } else {
             addMessage(responseData.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", "error");

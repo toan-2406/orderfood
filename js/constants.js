@@ -12,6 +12,7 @@ export const CONFIG = {
 export const AVAILABLE_COMMANDS = [
     { name: '/auth', desc: 'Dô mần việc.', allowedRoles: ['guest', 'user', 'admin'], opensDialog: true },
     { name: '/help', desc: 'Coi mấy cái lệnh.', allowedRoles: ['guest', 'user', 'admin'] },
+    { name: '/my_orders', desc: 'Xem đơn hàng đã đặt của bạn.', allowedRoles: ['user', 'admin'], opensDialog: false },
     { name: '/logout', desc: 'Đi dìa.', allowedRoles: ['user', 'admin'] },
     { name: '/insert', desc: 'Thiêm món.', allowedRoles: ['admin'], opensDialog: true },
     { name: '/menu', desc: 'Coi thực đơn.', allowedRoles: ['user', 'admin'] },
