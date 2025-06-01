@@ -1,6 +1,7 @@
 import { appUser } from './auth.js';
-import { sendAddCommand } from './commands.js';
+import { sendAddCommand, handleCommand } from './commands.js'; // Added handleCommand, might not be needed if direct fetch is used.
 import { addMessage } from './ui-utils.js';
+import { CONFIG } from './constants.js'; // For webhook URL
 
 let wheelModal, confirmationModal;
 let wheelCanvas, wheelCtx;
@@ -347,4 +348,67 @@ export function updateRandomFoodButtonVisibility() {
     } else {
         randomFoodButton.classList.add('hidden');
     }
-} 
+}
+
+export async function openWheelModalWithMenuCheck() {
+    if (!appUser.isAuthenticated) {
+        // Should not happen if called after auth, but good check
+        addMessage("Bạn cần đăng nhập để sử dụng vòng quay.", "error", true);
+        return;
+    }
+
+    // Display a temporary loading message for fetching menu
+    const loadingMessageId = `loading-wheel-menu-${Date.now()}`;
+    addMessage("Đang tải menu cho vòng quay...", "info", false, loadingMessageId);
+
+    try {
+        const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (appUser.token) {
+            headers['Authorization'] = `Bearer ${appUser.token}`;
+        }
+
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ text: "/menu" })
+        });
+
+        // Remove loading message
+        const loadingElement = document.getElementById(loadingMessageId);
+        if (loadingElement) loadingElement.remove();
+
+        const responseData = await response.json();
+
+        if (response.ok && responseData && responseData.errorCode === 0 && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
+            currentMenuData = responseData.data.map(item => ({
+                id: item.id, // Assuming menu items have an id
+                name: item.name,
+                price: item.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price) : ""
+            }));
+
+            if (currentMenuData.length > 0) {
+                openWheelModal(); // This existing function draws the wheel and shows the modal
+            } else {
+                addMessage("Không có món nào trong menu để quay vòng may mắn lúc này.", "info", true);
+            }
+        } else {
+            let errorMsg = "Không thể tải menu cho vòng quay. ";
+            if (responseData && responseData.message) {
+                errorMsg += responseData.message;
+            } else if (!response.ok) {
+                errorMsg += `(Lỗi: ${response.statusText})`;
+            }
+            addMessage(errorMsg, "error", true);
+        }
+    } catch (error) {
+        const loadingElement = document.getElementById(loadingMessageId);
+        if (loadingElement) loadingElement.remove();
+        addMessage(`Lỗi khi tải menu cho vòng quay: ${error.message}`, "error", true);
+    }
+}
+
+// Ensure openWheelModal is exported if it wasn't (it seems to be implicitly used by openWheelModalWithMenuCheck calling it)
+// No explicit export needed if it's only called internally by the exported openWheelModalWithMenuCheck.
+// However, if handleRandomFoodClick is to use it too, it might need to be exported or refactored.
+// For now, openWheelModal is not exported, which is fine as openWheelModalWithMenuCheck is the public interface.

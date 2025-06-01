@@ -230,6 +230,9 @@ export async function handleCommand(command) {
     } else if (commandName === '/help') {
         handleHelpCommand();
         return;
+} else if (commandName === '/my_orders') {
+    await handleMyOrdersCommand();
+    return;
     }
     else { 
         if (
@@ -688,3 +691,65 @@ function showStickyMenuCard() {
 
 // Export createStickyMenuCard for use in other modules
 export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard };
+
+async function handleMyOrdersCommand() {
+    const messageContainer = document.getElementById('messageContainer');
+    const loadingId = `loading-webhook-my-orders-${Date.now()}`;
+    const tempLoadingMsg = document.createElement('div');
+    tempLoadingMsg.id = loadingId;
+    tempLoadingMsg.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'mr-auto', 'max-w-[70%]');
+    tempLoadingMsg.innerHTML = `<p class="text-[#A5B6A0] text-sm flex items-center">Đang tải lịch sử đơn hàng... <span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span></p>`;
+    messageContainer.appendChild(tempLoadingMsg);
+
+    // Scroll to bottom to show loading message
+    const mainChatArea = document.getElementById('mainChatArea');
+    mainChatArea.scrollTo({ top: mainChatArea.scrollHeight, behavior: 'smooth' });
+
+    try {
+        const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (appUser.isAuthenticated && appUser.token) {
+            headers['Authorization'] = `Bearer ${appUser.token}`;
+        }
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ text: "/my_orders" })
+        });
+
+        const loadingElement = document.getElementById(loadingId);
+        if (loadingElement) loadingElement.remove();
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+            if (responseData && responseData.errorCode === 0 && responseData.data) {
+                if (Array.isArray(responseData.data) && responseData.data.length > 0) {
+                    let ordersHtml = "<strong>🗒️ LỊCH SỬ ĐƠN HÀNG CỦA BẠN:</strong><br><br>";
+                    responseData.data.forEach(order => {
+                        ordersHtml += `Mã đơn: ${order.order_id}, Ngày: ${order.date}, Tổng tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_amount)}, Trạng thái: ${order.status}<br>`;
+                    });
+                    addMessage(ordersHtml, 'webhook_response', true);
+                } else if (Array.isArray(responseData.data) && responseData.data.length === 0) {
+                    addMessage("Bạn chưa có đơn hàng nào.", 'webhook_response', true);
+                } else if (typeof responseData.data === 'string') {
+                    addMessage(responseData.data, 'webhook_response', true);
+                } else {
+                     // Fallback for unexpected data structure but still errorCode 0
+                    addMessage("Không thể hiển thị lịch sử đơn hàng. Dữ liệu nhận được không đúng định dạng.", 'error');
+                }
+            } else if (responseData && responseData.message) { // Handle cases where errorCode might not be 0 but there's a message
+                 addMessage(responseData.message, responseData.errorCode === 0 ? 'webhook_response' : 'error', true);
+            }
+            else {
+                addMessage("Không thể tải lịch sử đơn hàng. Phản hồi từ server không hợp lệ.", "error");
+            }
+        } else {
+            addMessage(`❌ Lỗi khi tải lịch sử đơn hàng: ${responseData.message || response.statusText}`, "error");
+        }
+    } catch (error) {
+        const loadingElement = document.getElementById(loadingId);
+        if (loadingElement) loadingElement.remove();
+        addMessage(`❌ Lỗi khi tải lịch sử đơn hàng: ${error.message}`, "error");
+    }
+}
