@@ -317,7 +317,7 @@ async function handleDebtCommand() {
 
             let aiDebtMessage = "Lời nhắc AI không có sẵn do lỗi."; // Default fallback
 
-            const geminiApiKey = window.GEMINI_API_KEY;
+            const geminiApiKey = process.env.GEMINI_API_KEY || "AIzaSyBNNSt5tvNS4duwk33hA70QtLXmFlMJxN8"; // Ensure this is set in your environment or window object
             if (!geminiApiKey) {
                 console.error("Gemini API key is not configured. Please set window.GEMINI_API_KEY.");
                 aiDebtMessage = "Không thể tạo lời nhắc AI do lỗi cấu hình API key.";
