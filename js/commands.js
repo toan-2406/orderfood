@@ -838,8 +838,7 @@ function showStickyMenuCard() {
 }
 
 // Export createStickyMenuCard for use in other modules
-// Also exporting updateDebtButtonVisibility
-export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard, updateDebtButtonVisibility };
+export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard };
 
 async function handleMyOrdersCommand() {
     const messageContainer = document.getElementById('messageContainer');
