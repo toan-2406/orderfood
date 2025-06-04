@@ -1,4 +1,5 @@
 import { CONFIG } from './constants.js';
+import { updateDebtButtonVisibility } from './commands.js'; // Added import
 
 // Application-level user authentication state
 export let appUser = {
@@ -84,4 +85,9 @@ export function updateAuthStatusUI() {
             // Module might not be loaded yet, ignore error
         });
     }, 100);
+
+    // Update debt button visibility
+    if (typeof updateDebtButtonVisibility === 'function') {
+        updateDebtButtonVisibility();
+    }
 } 
