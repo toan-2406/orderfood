@@ -335,38 +335,52 @@ async function handleDebtCommand() {
     }
 
     try {
-        const geminiApiKey = "AIzaSyBNNSt5tvNS4duwk33hA70QtLXmFlMJxN8"; // Replace with your actual API key
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
-        const formattedDebt = debt.toLocaleString('vi-VN');
-        const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebt} VND.`;
+        const geminiApiKey = window.GEMINI_API_KEY;
 
-        const geminiResponse = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }]
-            })
-        });
-
-        if (!geminiResponse.ok) {
-            throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
-        }
-
-        const geminiData = await geminiResponse.json();
-        if (geminiData.candidates && geminiData.candidates.length > 0 &&
-            geminiData.candidates[0].content && geminiData.candidates[0].content.parts &&
-            geminiData.candidates[0].content.parts.length > 0 && geminiData.candidates[0].content.parts[0].text) {
-            aiDebtMessage = geminiData.candidates[0].content.parts[0].text;
+        if (!geminiApiKey) {
+            console.error("Gemini API key is not configured. Please set window.GEMINI_API_KEY.");
+            addMessage("Lỗi: Không thể kết nối tới dịch vụ AI để tạo lời nhắc nợ. Thông tin nợ cơ bản vẫn sẽ được hiển thị.", "error");
+            responseData.data.aiDebtMessage = "Không thể tạo lời nhắc AI do lỗi cấu hình.";
+            // Skip Gemini call if key is missing, but still show base debt info
+            // The rest of the function will proceed to the final addMessage call
         } else {
-            throw new Error("Could not extract AI message from Gemini response.");
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+            const formattedDebt = debt.toLocaleString('vi-VN');
+            const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebt} VND.`;
+
+            const geminiResponse = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }]
+                })
+            });
+
+            if (!geminiResponse.ok) {
+                throw new Error(`Gemini API request failed: ${geminiResponse.statusText} (Status: ${geminiResponse.status})`);
+            }
+
+            const geminiData = await geminiResponse.json();
+            if (geminiData.candidates && geminiData.candidates.length > 0 &&
+                geminiData.candidates[0].content && geminiData.candidates[0].content.parts &&
+                geminiData.candidates[0].content.parts.length > 0 && geminiData.candidates[0].content.parts[0].text) {
+                aiDebtMessage = geminiData.candidates[0].content.parts[0].text;
+            } else {
+                // Check for specific error structures from Gemini API if available
+                if (geminiData.error) {
+                    console.error("Gemini API Error:", geminiData.error);
+                    throw new Error(`Could not extract AI message. Gemini API Error: ${geminiData.error.message}`);
+                }
+                throw new Error("Could not extract AI message from Gemini response. Unexpected structure.");
+            }
+            responseData.data.aiDebtMessage = aiDebtMessage;
         }
-        responseData.data.aiDebtMessage = aiDebtMessage;
 
     } catch (error) {
         console.error("Error calling Gemini API:", error);
