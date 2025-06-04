@@ -23,12 +23,12 @@
             <header class="backdrop-blur-md border-b shrink-0 z-10"> <!-- Removed bg-[#131712]/95 and border-white/10 -->
                 <div class="flex items-center p-4 pb-3">
                     <button id="punchButton" class="text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                       <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNoanlucTVhZXN2ajJyamp3amV2ZjZjNzM5cDZwZnVoNGJsNDg3bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/pQf5O9WAjSwwpDt9go/giphy.gif" class="h-[50px] w-[50px]" alt='punch me'> Đấm tao đi !
+                       <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNoanlucTVhZXN2ajJyamp3amV2ZjZjNzM5cDZwZnVoNGJsNDg3bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/pQf5O9WAjSwwpDt9go/giphy.gif" alt='punch me'> Đấm tao đi ! <!-- Removed h-[50px] w-[50px] -->
                     </button>
                     <h1
-                        class="text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10 uppercase"> <!-- text-white will be inherited or should be set by styles.css if needed -->
+                        class="text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-4 sm:pr-6 md:pr-10 uppercase"> <!-- text-white will be inherited or should be set by styles.css if needed -->
                         Kiu món lẹ đê!</h1>
-                    <div id="authStatus" class="text-xs absolute right-4 top-1/2 -translate-y-1/2">Chưa <!-- Removed text-[#A5B6A0] -->
+                    <div id="authStatus" class="text-xs absolute right-2 sm:right-3 md:right-4 top-1/2 -translate-y-1/2">Chưa <!-- Removed text-[#A5B6A0] -->
                         đăng nhập</div>
                 </div>
             </header>
@@ -230,7 +230,7 @@
                 <div class="relative flex justify-center items-center mb-8">
                     <!-- Wheel Container -->
                     <div class="relative">
-                        <canvas id="wheelCanvas" width="300" height="300" class="rounded-full shadow-lg"></canvas> <!-- border-4 border-[#53d22c] removed -->
+                        <canvas id="wheelCanvas" class="rounded-full shadow-lg"></canvas> <!-- border-4 border-[#53d22c] removed, width/height attributes removed -->
                         
                         <!-- Pointer -->
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 z-10">

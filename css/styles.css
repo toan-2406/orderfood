@@ -106,10 +106,10 @@ body {
     font-family: 'Audiowide', 'Noto Sans', sans-serif;
     background-color: #0A0F2AFF;
     color: #E0E0E0FF;
-    height: 100vh;
+    min-height: 100vh; /* Allow content to expand */
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    /* overflow: hidden; Removed */
 }
 
 header, footer { /* Applying themed background to header and footer */
@@ -134,8 +134,8 @@ html {
 }
 
 .design-root-container {
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh; /* Allow content to expand */
+    /* overflow: hidden; Removed */
 }
 
 footer.fixed {
@@ -369,13 +369,16 @@ Keeping this commented out for now, can be deleted later.
     background: var(--cyber-secondary-bg); /* Changed from #2D372A */
     color: #E0E0E0FF; /* Changed from #A5B6A0 */
     border: 1px solid var(--cyber-neon-blue); /* Changed from #53d22c */
-    padding: 4px 8px;
+    padding: 0.5rem 0.75rem; /* Increased padding */
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 0.875rem; /* Increased font size */
+    min-height: 40px; /* Minimum touch target height */
     cursor: pointer;
     transition: all 0.2s ease;
     margin: 2px;
-    display: inline-block;
+    display: inline-flex; /* Use flex to center content */
+    align-items: center;
+    justify-content: center;
 }
 
 .menu-item-button:hover {
@@ -388,13 +391,16 @@ Keeping this commented out for now, can be deleted later.
 .command-suggestion-item {
     background: var(--cyber-secondary-bg); /* Changed from #2D372A */
     color: #E0E0E0FF; /* Changed from #A5B6A0 */
-    padding: 8px 12px;
+    padding: 0.6rem 0.8rem; /* Adjusted padding */
     margin: 2px 0;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
-    font-size: 13px;
+    font-size: 0.875rem; /* Increased font size */
+    min-height: 40px; /* Minimum touch target height */
+    display: flex; /* Align text vertically */
+    align-items: center; /* Align text vertically */
 }
 
 .command-suggestion-item:hover,
@@ -409,7 +415,7 @@ Keeping this commented out for now, can be deleted later.
     background: linear-gradient(145deg, var(--cyber-secondary-bg), #05081AFF);
     border: 2px solid var(--cyber-border-color);
     border-radius: 8px; /* Sharper border */
-    padding: 2rem;
+    padding: clamp(1rem, 5vw, 2rem); /* Responsive padding */
     text-align: center;
     margin: 1rem 0;
     box-shadow: 0 0 10px var(--cyber-neon-pink), 0 0 5px var(--cyber-neon-pink) inset; /* Subtle glow */
@@ -417,7 +423,7 @@ Keeping this commented out for now, can be deleted later.
 
 .welcome-title {
     color: var(--cyber-neon-pink); /* Changed from #53d22c */
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 6vw, 2rem); /* Responsive font size */
     font-weight: bold;
     margin-bottom: 1rem;
     text-shadow: 0 0 10px var(--cyber-neon-pink); /* Adjusted shadow color */
@@ -425,7 +431,7 @@ Keeping this commented out for now, can be deleted later.
 
 .welcome-subtitle {
     color: #E0E0E0FF; /* Changed from #A5B6A0 */
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 4vw, 1.1rem); /* Responsive font size */
     margin-bottom: 1.5rem;
     line-height: 1.6;
 }
@@ -478,7 +484,8 @@ Keeping this commented out for now, can be deleted later.
 
 #commandInput {
     padding: 0.75rem 0.75rem 0.75rem 2.5rem; /* Adjusted padding for icon */
-    height: 3.5rem; /* Match button height */
+    min-height: 3rem; /* Adjusted height, allow some flexibility */
+    height: auto; /* Allow height to adjust based on content / min-height */
 }
 
 
@@ -493,7 +500,7 @@ Keeping this commented out for now, can be deleted later.
 
 #commandHelpText {
     color: #888890; /* Muted help text */
-    font-size: 0.75rem; /* Smaller help text */
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem); /* Responsive font size */
 }
 
 /* Ensure labels in modals are styled correctly */
@@ -640,13 +647,17 @@ Keeping this commented out for now, can be deleted later.
     color: #E0E0E0FF; /* Changed from #A5B6A0 */
     border: 1px solid var(--cyber-neon-blue);
     border-radius: 4px; /* Sharper */
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem; /* Existing padding seems okay, ensure min-height */
+    font-size: 0.875rem; /* Increased font size */
+    min-height: 40px; /* Minimum touch target height */
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
     min-width: 80px;
     white-space: nowrap;
+    display: inline-flex; /* Use flex to center content */
+    align-items: center;
+    justify-content: center;
 }
 
 .sticky-menu-item:hover {
@@ -700,9 +711,22 @@ Keeping this commented out for now, can be deleted later.
     }
     
     .sticky-menu-item {
-        min-width: 70px;
+        min-width: 70px; /* Keep min-width from previous adjustment */
+        padding: 0.5rem 0.6rem; /* Ensure adequate padding */
+        font-size: 0.8rem; /* Slightly larger font for small screens */
+        min-height: 36px; /* Adjusted min-height for smaller items */
+    }
+
+    .menu-item-button {
         padding: 0.4rem 0.6rem;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        min-height: 36px;
+    }
+
+    .command-suggestion-item {
+        padding: 0.5rem 0.7rem; /* Adjusted padding */
+        font-size: 0.8rem; /* Adjusted font size */
+        min-height: 38px; /* Adjusted min-height */
     }
 }
 
@@ -741,6 +765,10 @@ Keeping this commented out for now, can be deleted later.
     border: 4px solid var(--cyber-neon-pink);
     border-radius: 50%; /* Ensure it's circular */
     box-shadow: 0 0 15px var(--cyber-neon-pink), 0 0 5px var(--cyber-neon-pink) inset;
+    width: 100%; /* Responsive width */
+    max-width: 300px; /* Max size */
+    height: auto; /* Maintain aspect ratio */
+    aspect-ratio: 1 / 1; /* Maintain aspect ratio */
 }
 
 .wheel-pointer { /* Style for the wheel pointer */
@@ -816,8 +844,8 @@ header h1 {
     border: none; /* Remove any potential inherited borders */
     box-shadow: none; /* Remove any potential inherited shadows */
     border-radius: 50%; /* Ensure image is also rounded if it's square */
-    width: 40px; /* Control size of gif */
-    height: 40px;
+    width: clamp(30px, 8vw, 40px); /* Responsive size for punch button image */
+    height: clamp(30px, 8vw, 40px); /* Responsive size for punch button image */
 }
 
 /* Additional styling for punch button for cyberpunk theme */
@@ -838,6 +866,12 @@ header h1 {
     background-color: rgba(var(--cyber-neon-pink-rgb), 0.1); /* Use RGB for alpha on hover */
     border-color: var(--cyber-neon-pink);
     box-shadow: 0 0 8px var(--cyber-neon-pink), 0 0 15px var(--cyber-neon-pink);
+}
+
+#punchButton:focus-visible {
+    outline: 2px solid var(--cyber-neon-pink);
+    outline-offset: 2px;
+    box-shadow: 0 0 8px var(--cyber-neon-pink), 0 0 15px var(--cyber-neon-pink); /* Ensure glow is visible with outline */
 }
 
 
@@ -861,13 +895,20 @@ header h1 {
     }
     
     #wheelCanvas {
-        width: 250px;
-        height: 250px;
+        /* width: 250px; */ /* Adjusted by new responsive rules */
+        /* height: 250px; */
+        max-width: 250px; /* Adjust max-width for smaller screens */
     }
     
     #wheelModal .modal-content {
         max-width: 90vw;
         padding: 1.5rem;
+    }
+
+    /* General modal content adjustment for small screens */
+    .modal-content {
+        max-width: 90vw; /* Ensure modals fit smaller screens */
+        /* Padding can be adjusted here if needed, but Tailwind p-6 (1.5rem) is often okay */
     }
 }
 
