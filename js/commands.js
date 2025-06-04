@@ -283,116 +283,94 @@ export async function handleCommand(command) {
 }
 
 async function handleDebtCommand() {
-    const userId = appUser.id;
-    const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1bqmrIhHhWXoGDjflTjJ7nGXSNUcogLjAwtUBrJOHG_o/export?format=csv&gid=37642642";
-    let debt = 0;
-    let aiDebtMessage = "";
-
-    const responseData = {
-        errorCode: 0,
-        message: "Success",
-        data: {
-            userId: userId,
-            debt: debt,
-            reference: "https://docs.google.com/spreadsheets/d/1bqmrIhHhWXoGDjflTjJ7nGXSNUcogLjAwtUBrJOHG_o/edit?gid=37642642#gid=37642642",
-            payment: "https://i.postimg.cc/Pr7spNLf/OCPhoto-746334137-463031.jpg",
-            aiDebtMessage: ""
-        }
-    };
+    const commandText = "/debt";
+    const messageContainer = document.getElementById('messageContainer');
+    const loadingId = `loading-webhook-debt-${Date.now()}`;
+    const tempLoadingMsg = document.createElement('div');
+    tempLoadingMsg.id = loadingId;
+    tempLoadingMsg.classList.add('bg-[#1A1F18]', 'p-3', 'rounded-lg', 'shadow-md', 'mb-2', 'mr-auto', 'max-w-[70%]');
+    tempLoadingMsg.innerHTML = `<p class="text-[#A5B6A0] text-sm flex items-center">Đang kiểm tra nợ... <span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span></p>`;
+    messageContainer.appendChild(tempLoadingMsg);
+    messageContainer.scrollTop = messageContainer.scrollHeight;
 
     try {
-        const sheetResponse = await fetch(googleSheetUrl);
-        if (!sheetResponse.ok) {
-            throw new Error(`Error fetching Google Sheet: ${sheetResponse.statusText}`);
-        }
-        const csvData = await sheetResponse.text();
-        const rows = csvData.split('\n');
-        const header = rows[0].split(',');
-        const userIdIndex = header.indexOf('userId');
-        const debtMultiplierIndex = header.indexOf('debt_multiplier');
-
-        if (userIdIndex === -1 || debtMultiplierIndex === -1) {
-            throw new Error("CSV header 'userId' or 'debt_multiplier' not found.");
+        const webhookUrl = `${CONFIG.WEBHOOK_BASE_URL}/${CONFIG.ENDPOINTS.COMMANDS}`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (appUser.isAuthenticated && appUser.token) {
+            headers['Authorization'] = `Bearer ${appUser.token}`;
         }
 
-        for (let i = 1; i < rows.length; i++) {
-            const columns = rows[i].split(',');
-            if (columns[userIdIndex] && columns[userIdIndex].trim() == userId) {
-                const debtMultiplier = parseFloat(columns[debtMultiplierIndex]);
-                if (!isNaN(debtMultiplier)) {
-                    debt = debtMultiplier * 1000;
-                }
-                break;
-            }
-        }
-        responseData.data.debt = debt;
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ text: commandText })
+        });
 
-    } catch (error) {
-        console.error("Error processing debt data:", error);
-        responseData.errorCode = 1;
-        responseData.message = `Error processing debt data: ${error.message}. Displaying base info.`;
-        // Still display base debt info even if sheet processing fails
-    }
+        const loadingElement = document.getElementById(loadingId);
+        if(loadingElement) loadingElement.remove();
 
-    try {
-        const geminiApiKey = window.GEMINI_API_KEY;
+        const webhookResponseData = await response.json();
 
-        if (!geminiApiKey) {
-            console.error("Gemini API key is not configured. Please set window.GEMINI_API_KEY.");
-            addMessage("Lỗi: Không thể kết nối tới dịch vụ AI để tạo lời nhắc nợ. Thông tin nợ cơ bản vẫn sẽ được hiển thị.", "error");
-            responseData.data.aiDebtMessage = "Không thể tạo lời nhắc AI do lỗi cấu hình.";
-            // Skip Gemini call if key is missing, but still show base debt info
-            // The rest of the function will proceed to the final addMessage call
-        } else {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
-            const formattedDebt = debt.toLocaleString('vi-VN');
-            const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebt} VND.`;
+        if (response.ok && webhookResponseData.errorCode === 0 && webhookResponseData.data) {
+            const debtAmount = webhookResponseData.data.debt;
+            // const userId = webhookResponseData.data.userId; // Available if needed
 
-            const geminiResponse = await fetch(geminiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: prompt
-                        }]
-                    }]
-                })
-            });
+            let aiDebtMessage = "Lời nhắc AI không có sẵn do lỗi."; // Default fallback
 
-            if (!geminiResponse.ok) {
-                throw new Error(`Gemini API request failed: ${geminiResponse.statusText} (Status: ${geminiResponse.status})`);
-            }
-
-            const geminiData = await geminiResponse.json();
-            if (geminiData.candidates && geminiData.candidates.length > 0 &&
-                geminiData.candidates[0].content && geminiData.candidates[0].content.parts &&
-                geminiData.candidates[0].content.parts.length > 0 && geminiData.candidates[0].content.parts[0].text) {
-                aiDebtMessage = geminiData.candidates[0].content.parts[0].text;
+            const geminiApiKey = window.GEMINI_API_KEY;
+            if (!geminiApiKey) {
+                console.error("Gemini API key is not configured. Please set window.GEMINI_API_KEY.");
+                aiDebtMessage = "Không thể tạo lời nhắc AI do lỗi cấu hình API key.";
             } else {
-                // Check for specific error structures from Gemini API if available
-                if (geminiData.error) {
-                    console.error("Gemini API Error:", geminiData.error);
-                    throw new Error(`Could not extract AI message. Gemini API Error: ${geminiData.error.message}`);
+                try {
+                    const formattedDebtAmount = new Intl.NumberFormat('vi-VN').format(debtAmount || 0) + ' VND';
+                    const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebtAmount}.`;
+                    // Corrected Gemini URL
+                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+
+                    const geminiApiResponse = await fetch(geminiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+
+                    if (geminiApiResponse.ok) {
+                        const geminiData = await geminiApiResponse.json();
+                        if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content && geminiData.candidates[0].content.parts && geminiData.candidates[0].content.parts[0] && geminiData.candidates[0].content.parts[0].text) {
+                            aiDebtMessage = geminiData.candidates[0].content.parts[0].text;
+                        } else {
+                            aiDebtMessage = "Không nhận được nội dung hợp lệ từ AI.";
+                            console.error("Invalid Gemini response structure:", geminiData);
+                        }
+                    } else {
+                        const errorData = await geminiApiResponse.text();
+                        aiDebtMessage = `Lỗi khi gọi AI: ${geminiApiResponse.status}. Chi tiết: ${errorData.substring(0, 100)}`; // Truncate for brevity in chat
+                        console.error("Gemini API error:", geminiApiResponse.status, errorData);
+                    }
+                } catch (geminiError) {
+                    aiDebtMessage = `Lỗi khi xử lý yêu cầu AI: ${geminiError.message}`;
+                    console.error("Error calling Gemini AI:", geminiError);
                 }
-                throw new Error("Could not extract AI message from Gemini response. Unexpected structure.");
             }
-            responseData.data.aiDebtMessage = aiDebtMessage;
-        }
 
+            // Augment the original webhook response data
+            webhookResponseData.data.aiDebtMessage = aiDebtMessage;
+
+            // Display the combined data
+            addMessage(JSON.stringify(webhookResponseData, null, 2), 'webhook_response', false);
+
+        } else if (response.ok && webhookResponseData.errorCode !== 0) {
+             addMessage(`Lỗi từ server (webhook) cho lệnh "${commandText}": ${webhookResponseData.message || 'Lỗi không xác định từ server.'}`, "error");
+        } else if (!response.ok) {
+             addMessage(`Lỗi mạng hoặc server không sẵn sàng cho lệnh "${commandText}": ${response.statusText} (HTTP ${response.status})`, "error");
+        } else {
+             addMessage(`Lỗi không xác định cho lệnh "${commandText}": ${webhookResponseData.message || response.statusText || 'Unknown error'}`, "error");
+        }
     } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        responseData.data.aiDebtMessage = `Không thể tạo lời nhắc AI: ${error.message}`;
-        // If Gemini fails, we've already set errorCode to 0 or 1 from sheet processing,
-        // so we just add the AI error message to the existing response.
-        if (responseData.errorCode === 0) { // If sheet processing was successful but AI failed
-            responseData.message = "Successfully fetched debt, but AI message generation failed.";
-        }
+        const loadingElement = document.getElementById(loadingId);
+        if(loadingElement) loadingElement.remove();
+        addMessage(`Lỗi khi gửi lệnh "${commandText}": ${error.message}`, "error");
     }
-
-    addMessage(JSON.stringify(responseData, null, 2), 'webhook_response', false);
 }
 
 async function handleMenuCommand() {
