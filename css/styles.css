@@ -970,3 +970,12 @@ textarea::placeholder {
     border-radius: 4px; /* Rounded corners for the message block */
     font-style: italic; /* Italicize AI message for distinction */
 }
+
+.ai-debt-message .ai-debt-amount-highlight {
+    font-size: 1.6em; /* Significantly larger */
+    font-weight: bold;
+    color: var(--cyber-neon-green); /* Or another contrasting theme color */
+    padding: 0 2px; /* Add a little horizontal padding if needed */
+    /* Add a subtle text shadow to make it pop more */
+    text-shadow: 0 0 3px rgba(var(--cyber-neon-green-rgb), 0.7), 0 0 5px rgba(var(--cyber-neon-green-rgb), 0.5);
+}
