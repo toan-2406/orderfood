@@ -324,7 +324,7 @@ async function handleDebtCommand() {
             } else {
                 try {
                     const formattedDebtAmount = new Intl.NumberFormat('vi-VN').format(debtAmount || 0) + ' VND';
-                    const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebtAmount}.`;
+                    const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebtAmount}. Hãy viết lời nhắc thật ngắn gọn, súc tích, vui lòng giới hạn trong khoảng 500 ký tự.`;
                     // Corrected Gemini URL
                     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
@@ -360,7 +360,24 @@ async function handleDebtCommand() {
             const debtAmountFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(webhookResponseData.data.debt || 0);
             const referenceUrl = webhookResponseData.data.reference;
             const paymentImageUrl = webhookResponseData.data.payment;
-            const aiMessageHtml = webhookResponseData.data.aiDebtMessage.replace(/\n/g, "<br>");
+
+            let aiMessageText = webhookResponseData.data.aiDebtMessage;
+            const highlightSpan = `<span class="ai-debt-amount-highlight">${debtAmountFormatted}</span>`;
+
+            if (aiMessageText.includes(debtAmountFormatted)) {
+                aiMessageText = aiMessageText.replace(debtAmountFormatted, highlightSpan);
+            } else {
+                // Fallback: try to find a general money pattern if the exact string isn't there.
+                const moneyRegex = /(\d{1,3}(?:\.\d{3})*(?:\s*(?:VND|đồng|cành|k)))/i;
+                const match = aiMessageText.match(moneyRegex);
+                if (match && match[0]) {
+                     // To prevent highlighting within an already constructed span if AI somehow includes HTML
+                    if (!aiMessageText.includes(highlightSpan)) {
+                        aiMessageText = aiMessageText.replace(match[0], `<span class="ai-debt-amount-highlight">${match[0]}</span>`);
+                    }
+                }
+            }
+            const aiMessageHtml = aiMessageText.replace(/\n/g, "<br>");
 
             let htmlString = `<p><strong>Số tiền nợ:</strong> ${debtAmountFormatted}</p>`;
             if (referenceUrl) {
