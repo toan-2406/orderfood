@@ -356,8 +356,23 @@ async function handleDebtCommand() {
             // Augment the original webhook response data
             webhookResponseData.data.aiDebtMessage = aiDebtMessage;
 
+            // Construct HTML string
+            const debtAmountFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(webhookResponseData.data.debt || 0);
+            const referenceUrl = webhookResponseData.data.reference;
+            const paymentImageUrl = webhookResponseData.data.payment;
+            const aiMessageHtml = webhookResponseData.data.aiDebtMessage.replace(/\n/g, "<br>");
+
+            let htmlString = `<p><strong>Số tiền nợ:</strong> ${debtAmountFormatted}</p>`;
+            if (referenceUrl) {
+                htmlString += `<p><a href="${referenceUrl}" target="_blank" class="debt-reference-button">Xem chi tiết</a></p>`;
+            }
+            if (paymentImageUrl) {
+                htmlString += `<p><img src="${paymentImageUrl}" alt="Payment QR Code" class="debt-payment-image max-w-xs h-auto my-2 rounded"></p>`;
+            }
+            htmlString += `<p class="ai-debt-message">${aiMessageHtml}</p>`;
+
             // Display the combined data
-            addMessage(JSON.stringify(webhookResponseData, null, 2), 'webhook_response', false);
+            addMessage(htmlString, 'webhook_response', true);
 
         } else if (response.ok && webhookResponseData.errorCode !== 0) {
              addMessage(`Lỗi từ server (webhook) cho lệnh "${commandText}": ${webhookResponseData.message || 'Lỗi không xác định từ server.'}`, "error");
