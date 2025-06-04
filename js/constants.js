@@ -23,5 +23,6 @@ export const AVAILABLE_COMMANDS = [
     { name: '/publish', desc: 'Nấu đi nèo.', allowedRoles: ['admin'] },
     { name: '/aggregate', desc: 'Coi mấy cái đồ ăn nẫu kêu thử.', allowedRoles: ['admin'] },
     { name: '/create_user', desc: 'Làm người xài mới.', allowedRoles: ['admin'], opensDialog: true },
-    { name: '/update_password', desc: 'Đẩu cái bí mật của mi đi.', allowedRoles: ['user', 'admin'], opensDialog: true }
+    { name: '/update_password', desc: 'Đẩu cái bí mật của mi đi.', allowedRoles: ['user', 'admin'], opensDialog: true },
+    { name: '/debt', desc: 'Kiểm tra nợ và nhận lời nhắc sáng tạo.', allowedRoles: ['user'] }
 ]; 

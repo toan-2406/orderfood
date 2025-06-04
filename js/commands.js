@@ -17,6 +17,38 @@ export function initializeCommandElements() {
     // Create command buttons container
     createCommandButtonsContainer();
     setupInputAutoSlash();
+    createDebtButton(); // Create the new debt button
+    updateDebtButtonVisibility(); // Set initial visibility
+}
+
+function createDebtButton() {
+    const debtButton = document.createElement('button');
+    debtButton.id = 'debtCommandButton';
+    // Using a simple text icon for now, can be replaced with actual icon HTML/class if available
+    debtButton.innerHTML = '💰 Xem Nợ';
+    // Positioning: fixed bottom-24 left-4.
+    // toggleCommandsButton is bottom-[5.8rem] right-4 (approx 92px from bottom)
+    // commandButtonsContainer is bottom-24 (96px from bottom)
+    // So, bottom-24 left-4 should provide good separation and visibility.
+    debtButton.className = 'fixed bottom-24 left-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-5 rounded-full shadow-xl z-30 transition-all duration-150 ease-in-out flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50';
+    debtButton.addEventListener('click', () => {
+        handleCommand('/debt');
+    });
+    debtButton.style.display = 'none'; // Initially hidden
+    document.body.appendChild(debtButton);
+}
+
+// Export this function to be used in auth.js
+export function updateDebtButtonVisibility() {
+    const debtButton = document.getElementById('debtCommandButton');
+    if (debtButton) {
+        // Show only for authenticated 'user' role
+        if (appUser.isAuthenticated && appUser.role === 'user') {
+            debtButton.style.display = 'flex';
+        } else {
+            debtButton.style.display = 'none';
+        }
+    }
 }
 
 function createCommandButtonsContainer() {
@@ -233,6 +265,9 @@ export async function handleCommand(command) {
 } else if (commandName === '/my_orders') {
     await handleMyOrdersCommand();
     return;
+    } else if (commandName === '/debt') {
+        await handleDebtCommand();
+        return;
     }
     else { 
         if (
@@ -245,6 +280,105 @@ export async function handleCommand(command) {
             addMessage(`Lệnh không xác định hoặc không được phép: "${command}". Gõ /help để xem các lệnh.`, 'error');
         }
     }
+}
+
+async function handleDebtCommand() {
+    const userId = appUser.id;
+    const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1bqmrIhHhWXoGDjflTjJ7nGXSNUcogLjAwtUBrJOHG_o/export?format=csv&gid=37642642";
+    let debt = 0;
+    let aiDebtMessage = "";
+
+    const responseData = {
+        errorCode: 0,
+        message: "Success",
+        data: {
+            userId: userId,
+            debt: debt,
+            reference: "https://docs.google.com/spreadsheets/d/1bqmrIhHhWXoGDjflTjJ7nGXSNUcogLjAwtUBrJOHG_o/edit?gid=37642642#gid=37642642",
+            payment: "https://i.postimg.cc/Pr7spNLf/OCPhoto-746334137-463031.jpg",
+            aiDebtMessage: ""
+        }
+    };
+
+    try {
+        const sheetResponse = await fetch(googleSheetUrl);
+        if (!sheetResponse.ok) {
+            throw new Error(`Error fetching Google Sheet: ${sheetResponse.statusText}`);
+        }
+        const csvData = await sheetResponse.text();
+        const rows = csvData.split('\n');
+        const header = rows[0].split(',');
+        const userIdIndex = header.indexOf('userId');
+        const debtMultiplierIndex = header.indexOf('debt_multiplier');
+
+        if (userIdIndex === -1 || debtMultiplierIndex === -1) {
+            throw new Error("CSV header 'userId' or 'debt_multiplier' not found.");
+        }
+
+        for (let i = 1; i < rows.length; i++) {
+            const columns = rows[i].split(',');
+            if (columns[userIdIndex] && columns[userIdIndex].trim() == userId) {
+                const debtMultiplier = parseFloat(columns[debtMultiplierIndex]);
+                if (!isNaN(debtMultiplier)) {
+                    debt = debtMultiplier * 1000;
+                }
+                break;
+            }
+        }
+        responseData.data.debt = debt;
+
+    } catch (error) {
+        console.error("Error processing debt data:", error);
+        responseData.errorCode = 1;
+        responseData.message = `Error processing debt data: ${error.message}. Displaying base info.`;
+        // Still display base debt info even if sheet processing fails
+    }
+
+    try {
+        const geminiApiKey = "AIzaSyBNNSt5tvNS4duwk33hA70QtLXmFlMJxN8"; // Replace with your actual API key
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+        const formattedDebt = debt.toLocaleString('vi-VN');
+        const prompt = `Bạn là một người nhắc nợ vui tính. Hãy tạo một lời nhắc nợ bằng tiếng Việt thật sáng tạo và hài hước cho khoản nợ ${formattedDebt} VND.`;
+
+        const geminiResponse = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }]
+            })
+        });
+
+        if (!geminiResponse.ok) {
+            throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
+        }
+
+        const geminiData = await geminiResponse.json();
+        if (geminiData.candidates && geminiData.candidates.length > 0 &&
+            geminiData.candidates[0].content && geminiData.candidates[0].content.parts &&
+            geminiData.candidates[0].content.parts.length > 0 && geminiData.candidates[0].content.parts[0].text) {
+            aiDebtMessage = geminiData.candidates[0].content.parts[0].text;
+        } else {
+            throw new Error("Could not extract AI message from Gemini response.");
+        }
+        responseData.data.aiDebtMessage = aiDebtMessage;
+
+    } catch (error) {
+        console.error("Error calling Gemini API:", error);
+        responseData.data.aiDebtMessage = `Không thể tạo lời nhắc AI: ${error.message}`;
+        // If Gemini fails, we've already set errorCode to 0 or 1 from sheet processing,
+        // so we just add the AI error message to the existing response.
+        if (responseData.errorCode === 0) { // If sheet processing was successful but AI failed
+            responseData.message = "Successfully fetched debt, but AI message generation failed.";
+        }
+    }
+
+    addMessage(JSON.stringify(responseData, null, 2), 'webhook_response', false);
 }
 
 async function handleMenuCommand() {
@@ -690,7 +824,8 @@ function showStickyMenuCard() {
 }
 
 // Export createStickyMenuCard for use in other modules
-export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard };
+// Also exporting updateDebtButtonVisibility
+export { createStickyMenuCard, hideStickyMenuCard, showStickyMenuCard, updateDebtButtonVisibility };
 
 async function handleMyOrdersCommand() {
     const messageContainer = document.getElementById('messageContainer');
